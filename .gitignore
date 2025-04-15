@@ -35,3 +35,6 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# .env.dev 파일을 Git에 올리지 않도록 추가
+.env.dev
