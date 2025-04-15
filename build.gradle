@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.asciidoctor.jvm.convert' version '3.3.2'  // Spring REST Docs 관련
+    id 'com.epages.restdocs-api-spec' version '0.18.2'
 }
 
 group = 'com.clover'
@@ -23,20 +25,56 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    snippetsDir = file('build/generated-snippets')
+}
+
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
+
+    testImplementation 'org.springframework.restdocs:spring-restdocs-mockmvc'
+
+    testImplementation 'com.epages:restdocs-api-spec-mockmvc:0.18.2'
+
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 tasks.named('test') {
+    outputs.dir snippetsDir
     useJUnitPlatform()
+}
+
+asciidoctor {
+    inputs.dir snippetsDir
+    dependsOn test
+}
+
+openapi3 {
+    title = 'BookFlow API'
+    description = '책 커뮤니티 서비스 API 명세'
+    version = '1.0.0'
+    format = 'json'
+    outputFileNamePrefix = 'openapi3'
+    outputDirectory = 'build/api-spec'
+    snippetsDirectory = snippetsDir
+    server = 'http://localhost:8080'
+}
+
+tasks.register('copyOpenApi', Copy) {
+    dependsOn test
+    from(layout.buildDirectory.dir("api-spec")) {
+        include "openapi3.json"
+    }
+    into(layout.projectDirectory.dir("src/main/resources/static/docs"))
 }
