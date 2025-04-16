@@ -2,6 +2,8 @@ package com.clover.bookflow.domain.user.integration;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.clover.bookflow.config.AbstractIntegrationTest;
 import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
@@ -26,10 +28,13 @@ public class UserIntegrationTest extends AbstractIntegrationTest {
   void signup_success() throws Exception {
     UserSignupRequest request = new UserSignupRequest("hkd111@example.com", "password123", "길똥이");
     mockMvc.perform(post("/users/signup")
-        .contentType(MediaType.APPLICATION_JSON)
-        .content(new ObjectMapper().writeValueAsString(request))
-        .with(csrf())
-    );
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(new ObjectMapper().writeValueAsString(request))
+            .with(csrf())
+        )
+        .andExpect(status().isCreated())
+        .andExpect(jsonPath("$.email").value("hkd111@example.com"))
+        .andExpect(jsonPath("$.nickname").value("길똥이"));
   }
 
 
