@@ -1,0 +1,12 @@
+#spring:
+#  datasource:
+#    url: jdbc:mysql://mysql-stage:3306/bookflow_stage
+#    username: stage_user
+#    password: ${STAGE_DB_PASSWORD}
+#  jpa:
+#    hibernate:
+#      ddl-auto: validate
+#  sql:
+#    init:
+#      mode: always
+#      data-locations: classpath:dummy-data.sql

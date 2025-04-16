@@ -1,0 +1,37 @@
+# docker compose --env-file .env.dev up -d
+# 필요 시 docker-compose.dev.yml 로 구분 가능
+# docker 내에서 application, mysql 실행
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+# 일반 개발 시 애플리케이션은 docker 올리기 X 어느 정도 개발 후 올리기
+#  spring-app:
+#    build: .
+#    container_name: spring-app
+#    environment:
+#      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE}
+#    ports:
+#      - "8080:8080"
+#    depends_on:
+#      - mysql
+#    networks:
+#      - mysql-network
+
+networks:
+  mysql-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local

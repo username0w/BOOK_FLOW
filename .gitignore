@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# .env.dev 파일을 Git에 올리지 않도록 추가
+.env.dev
+
+# OpenAPI 스펙 파일을 빌드 아티팩트로 간주하고 무시
+src/main/resources/static/docs/openapi3.json
