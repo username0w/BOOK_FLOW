@@ -4,24 +4,27 @@ import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
 import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor // 생성자 주입이 더 안전, 깔끔
 public class UserService {
 
-  @Autowired
-  private UserRepository userRepository;
+  private final UserRepository userRepository;
 
-  @Autowired
-  private PasswordEncoder passwordEncoder;
+  private final PasswordEncoder passwordEncoder;
 
+  @Transactional
   public UserSignupResponse signup(UserSignupRequest request) {
+    log.info("회원가입 시도: {}", request);
+
     // 이메일 중복 체크 (비즈니스 유효성 검증)
-    if (userRepository.existsByEmail(request.email())) {
-      throw new IllegalArgumentException("이미 가입된 이메일입니다.");
-    }
+    validateEmail(request.email());
 
     String encodedPassword = passwordEncoder.encode(request.password());
 
@@ -30,6 +33,12 @@ public class UserService {
     userRepository.save(user);
 
     return UserSignupResponse.from(user);
+  }
+
+  private void validateEmail(String email) {
+    if (userRepository.existsByEmail(email)) {
+      throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+    }
   }
 
 

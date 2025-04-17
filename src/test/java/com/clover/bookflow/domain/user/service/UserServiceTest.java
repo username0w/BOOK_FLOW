@@ -10,12 +10,12 @@ import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
 import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,8 +29,13 @@ public class UserServiceTest {
   @Mock
   private PasswordEncoder passwordEncoder;
 
-  @InjectMocks
   private UserService userService;
+
+  // 필드 주입에서 생성자 주입으로 변경으로 인한 수정
+  @BeforeEach
+  void setUp() {
+    userService = new UserService(userRepository, passwordEncoder);
+  }
 
   @Nested
   @DisplayName("회원 가입")
