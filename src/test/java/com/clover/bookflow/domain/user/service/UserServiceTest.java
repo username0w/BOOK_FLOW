@@ -41,8 +41,8 @@ public class UserServiceTest {
   @DisplayName("회원 가입")
   class signup {
 
-    @Test
     @DisplayName("회원 가입 성공 테스트")
+    @Test
     void signup_success() {
       // given
       UserSignupRequest request = new UserSignupRequest("hkd111@example.com",
@@ -76,8 +76,8 @@ public class UserServiceTest {
     }
 
     // 이메일 중복시 회원 가입 실패
-    @Test
     @DisplayName("이미 가입된 이메일로 회원 가입하면 예외가 발생한다.")
+    @Test
     void should_ThrowException_When_EmailAlreadyExists() {
       // given
       UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
@@ -90,6 +90,23 @@ public class UserServiceTest {
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 가입된 이메일입니다.");
+    }
+
+    // 닉네임 중복 시 회원 가입 실패
+    @DisplayName("이미 존재하는 닉네임으로 회원 가입 시 예외가 발생한다.")
+    @Test
+    void should_ThrowException_When_NicknameAlreadyExists() {
+      // given
+      UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
+          "password123", "길똥이");
+      given(userRepository.existsByNickname("길똥이")).willReturn(true);
+
+      // when
+      IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+          () -> userService.signup(userSignupRequest));
+
+      // then
+      assertThat(e.getMessage()).isEqualTo("이미 존재하는 닉네임입니다.");
     }
   }
 

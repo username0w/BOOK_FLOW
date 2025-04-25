@@ -23,8 +23,12 @@ public class UserService {
   public UserSignupResponse signup(UserSignupRequest request) {
     log.info("회원가입 시도: {}", request);
 
-    // 이메일 중복 체크 (비즈니스 유효성 검증)
-    validateEmail(request.email());
+    // 입력값 자체 검사는 커스텀 어노테이션
+    // db 조회 필요한 검사는 서비스에서 처리
+
+    // 이메일, 닉네임 중복 체크 (비즈니스 유효성 검증)
+    validateDuplicateEmail(request.email());
+    validateDuplicateNickname(request.nickname());
 
     String encodedPassword = passwordEncoder.encode(request.password());
 
@@ -35,9 +39,15 @@ public class UserService {
     return UserSignupResponse.from(user);
   }
 
-  private void validateEmail(String email) {
+  private void validateDuplicateEmail(String email) {
     if (userRepository.existsByEmail(email)) {
       throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+    }
+  }
+
+  private void validateDuplicateNickname(String nickname) {
+    if (userRepository.existsByNickname(nickname)) {
+      throw new IllegalArgumentException("이미 존재하는 닉네임입니다.");
     }
   }
 
