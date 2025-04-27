@@ -10,12 +10,12 @@ import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
 import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,15 +29,20 @@ public class UserServiceTest {
   @Mock
   private PasswordEncoder passwordEncoder;
 
-  @InjectMocks
   private UserService userService;
+
+  // 필드 주입에서 생성자 주입으로 변경으로 인한 수정
+  @BeforeEach
+  void setUp() {
+    userService = new UserService(userRepository, passwordEncoder);
+  }
 
   @Nested
   @DisplayName("회원 가입")
   class signup {
 
-    @Test
     @DisplayName("회원 가입 성공 테스트")
+    @Test
     void signup_success() {
       // given
       UserSignupRequest request = new UserSignupRequest("hkd111@example.com",
@@ -71,8 +76,8 @@ public class UserServiceTest {
     }
 
     // 이메일 중복시 회원 가입 실패
-    @Test
     @DisplayName("이미 가입된 이메일로 회원 가입하면 예외가 발생한다.")
+    @Test
     void should_ThrowException_When_EmailAlreadyExists() {
       // given
       UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
@@ -85,6 +90,23 @@ public class UserServiceTest {
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 가입된 이메일입니다.");
+    }
+
+    // 닉네임 중복 시 회원 가입 실패
+    @DisplayName("이미 존재하는 닉네임으로 회원 가입 시 예외가 발생한다.")
+    @Test
+    void should_ThrowException_When_NicknameAlreadyExists() {
+      // given
+      UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
+          "password123", "길똥이");
+      given(userRepository.existsByNickname("길똥이")).willReturn(true);
+
+      // when
+      IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+          () -> userService.signup(userSignupRequest));
+
+      // then
+      assertThat(e.getMessage()).isEqualTo("이미 존재하는 닉네임입니다.");
     }
   }
 
