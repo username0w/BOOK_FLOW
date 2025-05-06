@@ -4,6 +4,8 @@ import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
 import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
+import com.clover.bookflow.global.errorcode.UserErrorCode;
+import com.clover.bookflow.global.exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -41,13 +43,13 @@ public class UserService {
 
   private void validateDuplicateEmail(String email) {
     if (userRepository.existsByEmail(email)) {
-      throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+      throw new DuplicateResourceException(UserErrorCode.EMAIL_ALREADY_EXISTS);
     }
   }
 
   private void validateDuplicateNickname(String nickname) {
     if (userRepository.existsByNickname(nickname)) {
-      throw new IllegalArgumentException("이미 존재하는 닉네임입니다.");
+      throw new DuplicateResourceException(UserErrorCode.NICKNAME_ALREADY_EXISTS);
     }
   }
 
