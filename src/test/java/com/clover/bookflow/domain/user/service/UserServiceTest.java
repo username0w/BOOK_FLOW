@@ -10,6 +10,7 @@ import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
 import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
+import com.clover.bookflow.global.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -85,11 +86,11 @@ public class UserServiceTest {
       given(userRepository.existsByEmail("hkd111@example.com")).willReturn(true);
 
       // when
-      IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+      DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
           () -> userService.signup(userSignupRequest));
 
       // then
-      assertThat(e.getMessage()).isEqualTo("이미 가입된 이메일입니다.");
+      assertThat(e.getMessage()).isEqualTo("이미 등록된 이메일입니다.");
     }
 
     // 닉네임 중복 시 회원 가입 실패
@@ -102,7 +103,7 @@ public class UserServiceTest {
       given(userRepository.existsByNickname("길똥이")).willReturn(true);
 
       // when
-      IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+      DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
           () -> userService.signup(userSignupRequest));
 
       // then
