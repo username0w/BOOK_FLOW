@@ -3,6 +3,7 @@ package com.clover.bookflow.domain.auth.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Date;
 import org.springframework.beans.factory.annotation.Value;
@@ -66,5 +67,12 @@ public class JwtProvider {
    * Claims : JWT 토큰의 사용자 정보, 만료시간 등
    * -> Payload 에 담기는 중요 정보
    * */
+
+  public String resolveToken(HttpServletRequest request) {
+    String bearerToken = request.getHeader("Authorization");
+    return (bearerToken != null && bearerToken.startsWith("Bearer ") ? bearerToken.substring(7)
+        : null);
+  }
+
 
 }
