@@ -4,13 +4,10 @@ import com.clover.bookflow.global.errorcode.ErrorCode;
 import lombok.Getter;
 
 @Getter
-public class BadRequestException extends RuntimeException {
+public class BadRequestException extends CustomException {
 
-  private final ErrorCode errorCode;
-
-  public BadRequestException(final ErrorCode errorCode) {
-    super(errorCode.getMessage());
-    this.errorCode = errorCode;
+  public BadRequestException(ErrorCode errorCode) {
+    super(errorCode);
   }
 
 }
