@@ -3,7 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.4.4'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'org.asciidoctor.jvm.convert' version '3.3.2'  // Spring REST Docs 관련
-    id 'com.epages.restdocs-api-spec' version '0.18.2'
+    id 'com.epages.restdocs-api-spec' version '0.19.0'
 }
 
 group = 'com.clover'
@@ -62,13 +62,27 @@ dependencies {
 }
 
 tasks.named('test') {
-    outputs.dir snippetsDir
     useJUnitPlatform()
+}
+
+tasks.register('testRestDocs', Test) {
+    useJUnitPlatform()
+    description = 'Run only REST Docs tests for API documentation'
+    group = 'verification'
+
+    // 문서화 테스트 대상 파일만 포함 (ControllerTest 등)
+    include '**/*ControllerTest.class'
+
+    // REST Docs 스니펫 위치 지정
+    outputs.dir snippetsDir
+
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
 }
 
 asciidoctor {
     inputs.dir snippetsDir
-    dependsOn test
+    dependsOn testRestDocs
 }
 
 openapi3 {
@@ -83,9 +97,20 @@ openapi3 {
 }
 
 tasks.register('copyOpenApi', Copy) {
-    dependsOn test
+    dependsOn testRestDocs
     from(layout.buildDirectory.dir("api-spec")) {
         include "openapi3.json"
     }
     into(layout.projectDirectory.dir("src/main/resources/static/docs"))
+}
+
+// 문서화 관련 전체
+tasks.register('buildDocs') {
+    group = 'documentation'
+    description = 'Run REST Docs tests and generate API documentation'
+
+    dependsOn tasks.named('testRestDocs')
+    dependsOn tasks.named('asciidoctor')
+    dependsOn tasks.named('openapi3')
+    dependsOn tasks.named('copyOpenApi')
 }
