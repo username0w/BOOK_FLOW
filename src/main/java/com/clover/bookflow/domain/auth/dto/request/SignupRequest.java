@@ -1,11 +1,11 @@
-package com.clover.bookflow.domain.user.dto.request;
+package com.clover.bookflow.domain.auth.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
 // 단순 데이터 전달 용도의 DTO 이므로 record 사용 (불변성 보장)
-public record UserSignupRequest(
+public record SignupRequest(
     // 입력값 검증은 Bean Validation (@Valid)를 사용하며, Controller 진입 직전에 처리
     @NotBlank(message = "Email must not be blank")
     @Email(message = "Invalid email format")
