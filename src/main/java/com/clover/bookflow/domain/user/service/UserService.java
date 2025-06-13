@@ -1,7 +1,6 @@
 package com.clover.bookflow.domain.user.service;
 
-import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
-import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
+import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
 import com.clover.bookflow.global.errorcode.UserErrorCode;
@@ -22,7 +21,7 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
 
   @Transactional
-  public UserSignupResponse signup(UserSignupRequest request) {
+  public User signup(SignupRequest request) {
     log.info("회원가입 시도: {}", request);
 
     // 입력값 자체 검사는 커스텀 어노테이션
@@ -36,9 +35,8 @@ public class UserService {
 
     // User 도메인 객체 생성 (정적 팩토리 메서드 사용)
     User user = User.create(request.email(), encodedPassword, request.nickname());
-    userRepository.save(user);
 
-    return UserSignupResponse.from(user);
+    return userRepository.save(user);
   }
 
   private void validateDuplicateEmail(String email) {
