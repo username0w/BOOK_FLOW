@@ -33,17 +33,15 @@ public class AuthService {
 
   // 회원가입 시 jwt 토큰 발급
   public SignupResponse signup(SignupRequest signupRequest) {
-    // controller 에서 userService.signup 호출하고 내부에서 authService.signup 호출
-    // 1. 사용자 정보 저장
+    // 1. 사용자 정보 저장 (userService 내부에서 중복 체크 및 인코딩 수행)
     User user = userService.signup(signupRequest);
 
-    // 2. 회원가입이 성공하면 Authentication 객체 생성
-    // 회원가입 후 이메일을 이용해 인증 객체 생성 (비밀번호는 저장되어 있어야 함)
+    // 2. 회원가입이 성공하면 Authentication 객체 생성 (SecurityContext 에 저장되지는 않음)
     Authentication authentication = new UsernamePasswordAuthenticationToken(
-        user.getEmail(), signupRequest.password()); // 이메일과 비밀번호로 인증 객체 생성
+        user.getEmail(), signupRequest.password());
 
-    // 3. 토큰 생성
-    String token = jwtProvider.createToken(authentication); // 인증 객체를 넘겨서 토큰 생성
+    // 3. JWT 토큰 생성
+    String token = jwtProvider.createToken(authentication);
 
     return SignupResponse.from(user, token);
 
@@ -60,18 +58,21 @@ public class AuthService {
     // 인증 처리 : AuthenticationManager.authenticate(...)
     // 인증 토큰 생성
     // 인증 객체 생성
+    // 1. 로그인 인증 시도 (이 과정에서 UserDetailsService가 호출됨)
     try {
       Authentication auth = authenticationManager.authenticate(
           new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password())
-      ); // 로그인 인증 시도
+      );
 
+      // 2. 인증된 사용자 정보 조회
       CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
       User user = userRepository.findById(userDetails.getId())
           .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND)
           );
+
+      // 3. JWT 토큰 생성
       String token = jwtProvider.createToken(auth);
 
-      // 토큰 돌려주기
       return LoginResponse.from(user, token);
     } catch (BadCredentialsException e) {
       throw new UnauthorizedException(UserErrorCode.LOGIN_FAILED);
