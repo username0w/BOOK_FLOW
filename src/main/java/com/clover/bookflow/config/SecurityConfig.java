@@ -30,7 +30,7 @@ public class SecurityConfig {
         ) // Spring 이 세션 만들지 않게 한다.
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/docs/**").permitAll()
-            .requestMatchers("/api/v1/auth/signup").permitAll()
+            .requestMatchers("/api/v1/auth/signup", "/api/v1/auth/login").permitAll()
             .anyRequest().authenticated()
         )
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
