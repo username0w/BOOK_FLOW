@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
-import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
-import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
+import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.user.entity.User;
+import com.clover.bookflow.domain.user.helper.UserTestHelper;
 import com.clover.bookflow.domain.user.repository.UserRepository;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,10 +32,13 @@ public class UserServiceTest {
 
   private UserService userService;
 
+  private UserTestHelper userTestHelper;
+
   // 필드 주입에서 생성자 주입으로 변경으로 인한 수정
   @BeforeEach
   void setUp() {
     userService = new UserService(userRepository, passwordEncoder);
+    userTestHelper = new UserTestHelper();
   }
 
   @Nested
@@ -44,67 +47,71 @@ public class UserServiceTest {
 
     @DisplayName("회원 가입 성공 테스트")
     @Test
-    void signup_success() {
+    void shouldSaveUser_whenSignupCredentialsAreValid() {
       // given
-      UserSignupRequest request = new UserSignupRequest("hkd111@example.com",
-          "password123", "길똥이");
+      SignupRequest request = userTestHelper.createSignupRequest();
       String encodedPW = "encodedPW";
 
-      given(userRepository.existsByEmail("hkd111@example.com")).willReturn(false);
+      given(userRepository.existsByEmail(request.email())).willReturn(false);
       given(passwordEncoder.encode(request.password())).willReturn(encodedPW);
 
       ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
 
-      User expectedUser = new User("hkd111@example.com", encodedPW, "길똥이");
+      User expectedUser = new User(request.email(), encodedPW, request.nickname());
       // id 없이 테스트 가능
       given(userRepository.save(any(User.class))).willReturn(expectedUser);
 
       // when
-      UserSignupResponse response = userService.signup(request);
+      User savedUser = userService.signup(request);
 
       // then
+      // 결과 검증
+      assertThat(savedUser.getNickname()).isEqualTo(request.nickname());
+      assertThat(savedUser.getEmail()).isEqualTo(request.email());
+
+      // 내부 호출 검증
       verify(userRepository).existsByEmail(request.email());
       verify(passwordEncoder).encode(request.password());
       verify(userRepository).save(userCaptor.capture());
 
+      // 캡쳐된 인자 값 검증
       User capturedUser = userCaptor.getValue();
       assertThat(capturedUser.getEmail()).isEqualTo(expectedUser.getEmail());
       assertThat(capturedUser.getPassword()).isEqualTo(encodedPW);
       assertThat(capturedUser.getNickname()).isEqualTo(expectedUser.getNickname());
-
-      assertThat(response.nickname()).isEqualTo("길똥이");
-      assertThat(response.email()).isEqualTo("hkd111@example.com");
     }
 
     // 이메일 중복시 회원 가입 실패
-    @DisplayName("이미 가입된 이메일로 회원 가입하면 예외가 발생한다.")
+    @DisplayName("이미 가입된 이메일로 회원 가입하면 예외가 발생한다")
     @Test
-    void should_ThrowException_When_EmailAlreadyExists() {
+    void shouldThrowException_WhenEmailAlreadyExists() {
       // given
-      UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
-          "password123", "길똥이");
-      given(userRepository.existsByEmail("hkd111@example.com")).willReturn(true);
+      String existingEmail = "hkd111@example.com";
+      SignupRequest signupRequest = userTestHelper.createInvalidSignupRequest(existingEmail,
+          null, null);
+      given(userRepository.existsByEmail(existingEmail)).willReturn(true);
 
       // when
       DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
-          () -> userService.signup(userSignupRequest));
+          () -> userService.signup(signupRequest));
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 등록된 이메일입니다.");
     }
 
     // 닉네임 중복 시 회원 가입 실패
-    @DisplayName("이미 존재하는 닉네임으로 회원 가입 시 예외가 발생한다.")
+    @DisplayName("이미 존재하는 닉네임으로 회원 가입 시 예외가 발생한다")
     @Test
-    void should_ThrowException_When_NicknameAlreadyExists() {
+    void shouldThrowException_WhenNicknameAlreadyExists() {
       // given
-      UserSignupRequest userSignupRequest = new UserSignupRequest("hkd111@example.com",
-          "password123", "길똥이");
-      given(userRepository.existsByNickname("길똥이")).willReturn(true);
+      String duplicatedNickname = "길똥이";
+      SignupRequest signupRequest = userTestHelper.createInvalidSignupRequest(null, null,
+          duplicatedNickname);
+      given(userRepository.existsByNickname(duplicatedNickname)).willReturn(true);
 
       // when
       DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
-          () -> userService.signup(userSignupRequest));
+          () -> userService.signup(signupRequest));
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 존재하는 닉네임입니다.");

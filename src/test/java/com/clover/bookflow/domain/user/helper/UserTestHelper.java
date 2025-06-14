@@ -1,30 +1,32 @@
 package com.clover.bookflow.domain.user.helper;
 
-import com.clover.bookflow.domain.auth.dto.AuthResponse;
-import com.clover.bookflow.domain.auth.dto.LoginRequest;
-import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
-import com.clover.bookflow.domain.user.dto.response.UserSignupResponse;
+import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
+import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
+import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
+import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
 
 public class UserTestHelper {
 
   private static final String DEFAULT_EMAIL = "test@example.com";
   private static final String DEFAULT_PASSWORD = "password123";
   private static final String DEFAULT_NICKNAME = "testNickname";
+  private static final String DEFAULT_TOKEN = "testToken";
 
-  public UserSignupRequest createSignupRequest() {
-    return new UserSignupRequest(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NICKNAME);
+
+  public SignupRequest createSignupRequest() {
+    return new SignupRequest(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NICKNAME);
   }
 
-  public UserSignupRequest createInvalidSignupRequest(String email, String password, String name) {
-    return new UserSignupRequest(
+  public SignupRequest createInvalidSignupRequest(String email, String password, String name) {
+    return new SignupRequest(
         email != null ? email : DEFAULT_EMAIL,
         password != null ? password : DEFAULT_PASSWORD,
         name != null ? name : DEFAULT_NICKNAME
     );
   }
 
-  public UserSignupResponse createSignupResponse() {
-    return new UserSignupResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME);
+  public SignupResponse createSignupResponse() {
+    return new SignupResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_TOKEN);
   }
 
   public LoginRequest createLoginRequest() {
@@ -38,8 +40,8 @@ public class UserTestHelper {
     );
   }
 
-  public AuthResponse createAuthResponse() {
-    return new AuthResponse(createSignupResponse(), "jwt-token");
+  public LoginResponse createLoginResponse() {
+    return new LoginResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_TOKEN);
   }
 
 }
