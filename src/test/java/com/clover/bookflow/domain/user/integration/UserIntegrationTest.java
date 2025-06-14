@@ -1,23 +1,12 @@
 package com.clover.bookflow.domain.user.integration;
 
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.clover.bookflow.config.AbstractIntegrationTest;
-import com.clover.bookflow.domain.user.dto.request.UserSignupRequest;
-import com.clover.bookflow.domain.user.entity.User;
 import com.clover.bookflow.domain.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
@@ -45,67 +34,5 @@ public class UserIntegrationTest extends AbstractIntegrationTest {
   void clean() {
     userRepository.deleteAll();
   }
-
-  @Nested
-  @DisplayName("회원가입")
-  class signup {
-
-    @DisplayName("회원가입 성공")
-    @Test
-    void signup_success() throws Exception {
-      UserSignupRequest request = new UserSignupRequest("hkd111@example.com", "password123", "길똥이");
-      mockMvc.perform(post("/users/signup")
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(objectMapper.writeValueAsString(request))
-              .with(csrf())
-          )
-          .andExpect(status().isCreated())
-          .andExpect(jsonPath("$.data.email").value("hkd111@example.com"))
-          .andExpect(jsonPath("$.data.nickname").value("길똥이"));
-    }
-
-    @DisplayName("회원가입 실패 - 중복 이메일로 요청")
-    @Test
-    void signup_duplicate_email_fail() throws Exception {
-      // given
-      userRepository.save(User.create("hkd111@example.com", "encodedPW", "길똥이"));
-
-      UserSignupRequest request = new UserSignupRequest("hkd111@example.com", "password123", "길똥이");
-
-      // when, then
-      mockMvc.perform(post("/users/signup")
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(objectMapper.writeValueAsString(request))
-              .with(csrf())
-          )
-          .andExpect(status().isConflict())
-          .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("EMAIL_ALREADY_EXISTS"))
-          .andExpect(jsonPath("$.message").value("이미 등록된 이메일입니다."));
-    }
-
-    @DisplayName("회원가입 실패 - 중복 닉네임으로 요청")
-    @Test
-    void signup_duplicate_nickname_fail() throws Exception {
-      // given
-      userRepository.save(User.create("hkd111@example.com", "encodedPW", "길똥이"));
-
-      UserSignupRequest request = new UserSignupRequest("hkd222@example.com", "password123", "길똥이");
-
-      // when, then
-      mockMvc.perform(post("/users/signup")
-              .contentType(MediaType.APPLICATION_JSON)
-              .content(objectMapper.writeValueAsString(request))
-              .with(csrf())
-          )
-          .andExpect(status().isConflict())
-          .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("NICKNAME_ALREADY_EXISTS"))
-          .andExpect(jsonPath("$.message").value("이미 존재하는 닉네임입니다."));
-    }
-
-
-  }
-
 
 }

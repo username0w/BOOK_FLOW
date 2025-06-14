@@ -4,10 +4,9 @@ import com.clover.bookflow.global.errorcode.ErrorCode;
 import lombok.Getter;
 
 @Getter
-public class DuplicateResourceException extends BusinessException {
+public class BusinessException extends CustomException {
 
-  public DuplicateResourceException(ErrorCode errorCode) {
+  public BusinessException(ErrorCode errorCode) {
     super(errorCode);
   }
-
 }

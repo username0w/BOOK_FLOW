@@ -5,6 +5,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,13 +21,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final JwtProvider jwtProvider;
   private final UserDetailsService userDetailsService;
 
+  private static final List<String> WHITELIST = List.of(
+      "/auth/signup",
+      "/auth/login",
+      "/swagger-ui",
+      "/v3/api-docs",
+      "/docs"
+  );
 
   // 요청마다 실행됨: JWT 검증 및 사용자 인증 처리
   @Override
   protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
       FilterChain filterChain) throws ServletException, IOException {
 
-    String token = jwtProvider.resolveToken(request); // 헤더에서 토큰 추출
+    String path = request.getRequestURI();
+
+    if (isWhitelisted(path)) {
+      filterChain.doFilter(request, response);
+      return;
+    }
+
+    String token = resolveToken(request); // 헤더에서 토큰 추출
 
     if (token != null && jwtProvider.validateToken(token)) { // 토큰 유효성 검증
       String email = jwtProvider.getEmailFromToken(token); // 토큰에서 이메일 추출
@@ -40,4 +55,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     filterChain.doFilter(request, response); // 다음 필터로 넘김
   }
+
+  private boolean isWhitelisted(String path) {
+    String pathWithoutVersion = path.replaceFirst("^/api/v\\d+", "");
+    return WHITELIST.stream().anyMatch(pathWithoutVersion::startsWith);
+  }
+
+  public String resolveToken(HttpServletRequest request) {
+    String bearerToken = request.getHeader("Authorization");
+    return (bearerToken != null && bearerToken.startsWith("Bearer ") ? bearerToken.substring(7)
+        : null);
+  }
+
 }
