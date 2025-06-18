@@ -1,7 +1,7 @@
-package com.clover.bookflow.domain.user.entity;
+package com.clover.bookflow.domain.member.entity;
 
-import com.clover.bookflow.domain.user.enums.Role;
-import com.clover.bookflow.domain.user.enums.UserStatus;
+import com.clover.bookflow.domain.member.enums.MemberStatus;
+import com.clover.bookflow.domain.member.enums.Role;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -17,8 +17,8 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "users")
-public class User {
+@Table(name = "members")
+public class Member {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -39,19 +39,19 @@ public class User {
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
-  private UserStatus userStatus;
+  private MemberStatus memberStatus;
 
 
-  public User(String email, String password, String nickname) {
+  public Member(String email, String password, String nickname) {
     this.email = email;
     this.password = password;
     this.nickname = nickname;
     this.role = Role.USER;
-    this.userStatus = UserStatus.ACTIVE;
+    this.memberStatus = MemberStatus.ACTIVE;
   }
 
-  public static User create(String email, String password, String nickname) {
-    return new User(email, password, nickname);
+  public static Member create(String email, String password, String nickname) {
+    return new Member(email, password, nickname);
   }
 
 }

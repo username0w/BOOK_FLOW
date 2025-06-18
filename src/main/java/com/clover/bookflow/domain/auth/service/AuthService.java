@@ -4,12 +4,12 @@ import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
-import com.clover.bookflow.domain.auth.security.CustomUserDetails;
+import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.auth.security.JwtProvider;
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.repository.UserRepository;
-import com.clover.bookflow.domain.user.service.UserService;
-import com.clover.bookflow.global.errorcode.UserErrorCode;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
+import com.clover.bookflow.domain.member.service.MemberService;
+import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.BusinessException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
@@ -26,24 +26,24 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-  private final UserService userService;
+  private final MemberService memberService;
   private final AuthenticationManager authenticationManager;
   private final JwtProvider jwtProvider;
-  private final UserRepository userRepository;
+  private final MemberRepository memberRepository;
 
   // 회원가입 시 jwt 토큰 발급
   public SignupResponse signup(SignupRequest signupRequest) {
-    // 1. 사용자 정보 저장 (userService 내부에서 중복 체크 및 인코딩 수행)
-    User user = userService.signup(signupRequest);
+    // 1. 사용자 정보 저장 (memberService 내부에서 중복 체크 및 인코딩 수행)
+    Member member = memberService.signup(signupRequest);
 
     // 2. 회원가입이 성공하면 Authentication 객체 생성 (SecurityContext 에 저장되지는 않음)
     Authentication authentication = new UsernamePasswordAuthenticationToken(
-        user.getEmail(), signupRequest.password());
+        member.getEmail(), signupRequest.password());
 
     // 3. JWT 토큰 생성
     String token = jwtProvider.createToken(authentication);
 
-    return SignupResponse.from(user, token);
+    return SignupResponse.from(member, token);
 
   }
 
@@ -65,17 +65,17 @@ public class AuthService {
       );
 
       // 2. 인증된 사용자 정보 조회
-      CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
-      User user = userRepository.findById(userDetails.getId())
-          .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND)
+      CustomMemberDetails userDetails = (CustomMemberDetails) auth.getPrincipal();
+      Member member = memberRepository.findById(userDetails.getId())
+          .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND)
           );
 
       // 3. JWT 토큰 생성
       String token = jwtProvider.createToken(auth);
 
-      return LoginResponse.from(user, token);
+      return LoginResponse.from(member, token);
     } catch (BadCredentialsException e) {
-      throw new UnauthorizedException(UserErrorCode.LOGIN_FAILED);
+      throw new UnauthorizedException(MemberErrorCode.LOGIN_FAILED);
     }
     /*
      * Spring Security의 기본 인증 흐름(DaoAuthenticationProvider)에서는 다음과 같이 동작:

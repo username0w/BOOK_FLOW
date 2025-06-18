@@ -1,4 +1,4 @@
-package com.clover.bookflow.domain.user.service;
+package com.clover.bookflow.domain.member.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -7,9 +7,9 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.helper.UserTestHelper;
-import com.clover.bookflow.domain.user.repository.UserRepository;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -22,23 +22,23 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
-public class UserServiceTest {
+public class MemberServiceTest {
 
   @Mock
-  private UserRepository userRepository;
+  private MemberRepository memberRepository;
 
   @Mock
   private PasswordEncoder passwordEncoder;
 
-  private UserService userService;
+  private MemberService memberService;
 
-  private UserTestHelper userTestHelper;
+  private MemberTestHelper memberTestHelper;
 
   // 필드 주입에서 생성자 주입으로 변경으로 인한 수정
   @BeforeEach
   void setUp() {
-    userService = new UserService(userRepository, passwordEncoder);
-    userTestHelper = new UserTestHelper();
+    memberService = new MemberService(memberRepository, passwordEncoder);
+    memberTestHelper = new MemberTestHelper();
   }
 
   @Nested
@@ -47,38 +47,38 @@ public class UserServiceTest {
 
     @DisplayName("회원 가입 성공 테스트")
     @Test
-    void shouldSaveUser_whenSignupCredentialsAreValid() {
+    void shouldSaveMember_whenSignupCredentialsAreValid() {
       // given
-      SignupRequest request = userTestHelper.createSignupRequest();
+      SignupRequest request = memberTestHelper.createSignupRequest();
       String encodedPW = "encodedPW";
 
-      given(userRepository.existsByEmail(request.email())).willReturn(false);
+      given(memberRepository.existsByEmail(request.email())).willReturn(false);
       given(passwordEncoder.encode(request.password())).willReturn(encodedPW);
 
-      ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+      ArgumentCaptor<Member> memberCaptor = ArgumentCaptor.forClass(Member.class);
 
-      User expectedUser = new User(request.email(), encodedPW, request.nickname());
+      Member expectedMember = new Member(request.email(), encodedPW, request.nickname());
       // id 없이 테스트 가능
-      given(userRepository.save(any(User.class))).willReturn(expectedUser);
+      given(memberRepository.save(any(Member.class))).willReturn(expectedMember);
 
       // when
-      User savedUser = userService.signup(request);
+      Member savedMember = memberService.signup(request);
 
       // then
       // 결과 검증
-      assertThat(savedUser.getNickname()).isEqualTo(request.nickname());
-      assertThat(savedUser.getEmail()).isEqualTo(request.email());
+      assertThat(savedMember.getNickname()).isEqualTo(request.nickname());
+      assertThat(savedMember.getEmail()).isEqualTo(request.email());
 
       // 내부 호출 검증
-      verify(userRepository).existsByEmail(request.email());
+      verify(memberRepository).existsByEmail(request.email());
       verify(passwordEncoder).encode(request.password());
-      verify(userRepository).save(userCaptor.capture());
+      verify(memberRepository).save(memberCaptor.capture());
 
       // 캡쳐된 인자 값 검증
-      User capturedUser = userCaptor.getValue();
-      assertThat(capturedUser.getEmail()).isEqualTo(expectedUser.getEmail());
-      assertThat(capturedUser.getPassword()).isEqualTo(encodedPW);
-      assertThat(capturedUser.getNickname()).isEqualTo(expectedUser.getNickname());
+      Member capturedMember = memberCaptor.getValue();
+      assertThat(capturedMember.getEmail()).isEqualTo(expectedMember.getEmail());
+      assertThat(capturedMember.getPassword()).isEqualTo(encodedPW);
+      assertThat(capturedMember.getNickname()).isEqualTo(expectedMember.getNickname());
     }
 
     // 이메일 중복시 회원 가입 실패
@@ -87,13 +87,13 @@ public class UserServiceTest {
     void shouldThrowException_WhenEmailAlreadyExists() {
       // given
       String existingEmail = "hkd111@example.com";
-      SignupRequest signupRequest = userTestHelper.createInvalidSignupRequest(existingEmail,
+      SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(existingEmail,
           null, null);
-      given(userRepository.existsByEmail(existingEmail)).willReturn(true);
+      given(memberRepository.existsByEmail(existingEmail)).willReturn(true);
 
       // when
       DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
-          () -> userService.signup(signupRequest));
+          () -> memberService.signup(signupRequest));
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 등록된 이메일입니다.");
@@ -105,13 +105,13 @@ public class UserServiceTest {
     void shouldThrowException_WhenNicknameAlreadyExists() {
       // given
       String duplicatedNickname = "길똥이";
-      SignupRequest signupRequest = userTestHelper.createInvalidSignupRequest(null, null,
+      SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(null, null,
           duplicatedNickname);
-      given(userRepository.existsByNickname(duplicatedNickname)).willReturn(true);
+      given(memberRepository.existsByNickname(duplicatedNickname)).willReturn(true);
 
       // when
       DuplicateResourceException e = assertThrows(DuplicateResourceException.class,
-          () -> userService.signup(signupRequest));
+          () -> memberService.signup(signupRequest));
 
       // then
       assertThat(e.getMessage()).isEqualTo("이미 존재하는 닉네임입니다.");

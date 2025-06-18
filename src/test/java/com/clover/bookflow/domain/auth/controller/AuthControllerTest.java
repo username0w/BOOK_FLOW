@@ -19,8 +19,8 @@ import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
 import com.clover.bookflow.domain.auth.security.JwtAuthenticationFilter;
 import com.clover.bookflow.domain.auth.service.AuthService;
-import com.clover.bookflow.domain.user.helper.UserTestHelper;
-import com.clover.bookflow.global.errorcode.UserErrorCode;
+import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,7 +66,7 @@ public class AuthControllerTest {
   private WebApplicationContext context;
 
   private TestHelper testHelper;
-  private UserTestHelper userTestHelper;
+  private MemberTestHelper memberTestHelper;
 
   @BeforeEach
   void setUp(RestDocumentationContextProvider provider) {
@@ -75,7 +75,7 @@ public class AuthControllerTest {
         .build();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    userTestHelper = new UserTestHelper();
+    memberTestHelper = new MemberTestHelper();
   }
 
   @Nested
@@ -90,8 +90,8 @@ public class AuthControllerTest {
       @Test
       void shouldReturn201_whenSignupSuccess() throws Exception {
         // given
-        SignupRequest request = userTestHelper.createSignupRequest();
-        SignupResponse response = userTestHelper.createSignupResponse();
+        SignupRequest request = memberTestHelper.createSignupRequest();
+        SignupResponse response = memberTestHelper.createSignupResponse();
 
         given(authService.signup(any(SignupRequest.class))).willReturn(response);
         // 여기 any 사용해도 request 는 mockMvc.perform 에 필요
@@ -221,17 +221,17 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenEmailIsDuplicate() throws Exception {
         // given
         String duplicatedEmail = "duplicate@example.com";
-        SignupRequest request = userTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
+        SignupRequest request = memberTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
             null);
 
         given(authService.signup(request)).willThrow(
-            new DuplicateResourceException(UserErrorCode.EMAIL_ALREADY_EXISTS));
+            new DuplicateResourceException(MemberErrorCode.EMAIL_ALREADY_EXISTS));
 
         // when & then
         testHelper.postRequest(BASE_URL + "/signup", request)
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.code").value("USER_004"))
+            .andExpect(jsonPath("$.code").value("MEMBER_004"))
             .andExpect(jsonPath("$.message").value("이미 등록된 이메일입니다."))
             .andDo(document("auth/signup/fail-409/duplicate-email",
                 resource(DocHelper.build(
@@ -249,17 +249,17 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenNicknameIsDuplicate() throws Exception {
         // given
         String duplicateNickname = "중복닉네임";
-        SignupRequest request = userTestHelper.createInvalidSignupRequest(null, null,
+        SignupRequest request = memberTestHelper.createInvalidSignupRequest(null, null,
             duplicateNickname);
 
         given(authService.signup(request)).willThrow(
-            new DuplicateResourceException(UserErrorCode.NICKNAME_ALREADY_EXISTS));
+            new DuplicateResourceException(MemberErrorCode.NICKNAME_ALREADY_EXISTS));
 
         // when & then
         testHelper.postRequest(BASE_URL + "/signup", request)
             .andExpect(status().isConflict())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.code").value("USER_005"))
+            .andExpect(jsonPath("$.code").value("MEMBER_005"))
             .andExpect(jsonPath("$.message").value("이미 존재하는 닉네임입니다."))
             .andDo(document("auth/signup/fail-409/duplicate-nickname",
                 resource(DocHelper.build(
@@ -288,8 +288,8 @@ public class AuthControllerTest {
       @Test
       void shouldReturn200_whenLoginSuccess() throws Exception {
         // given
-        LoginRequest request = userTestHelper.createLoginRequest();
-        LoginResponse response = userTestHelper.createLoginResponse();
+        LoginRequest request = memberTestHelper.createLoginRequest();
+        LoginResponse response = memberTestHelper.createLoginResponse();
         given(authService.login(any(LoginRequest.class))).willReturn(response);
 
         // when & then
@@ -316,15 +316,15 @@ public class AuthControllerTest {
       @Test
       void shouldReturnUnauthorized_whenWrongPassword() throws Exception {
         // given
-        LoginRequest request = userTestHelper.createLoginRequest();
+        LoginRequest request = memberTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
-            new UnauthorizedException(UserErrorCode.LOGIN_FAILED));
+            new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 
         // when & then
         testHelper.postRequest(BASE_URL + "/login", request)
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.code").value("USER_003"))
+            .andExpect(jsonPath("$.code").value("MEMBER_003"))
             .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
             .andDo(document("auth/login/fail-401/wrong-password", // 문서 파일명
                 resource(DocHelper.build(
@@ -342,15 +342,15 @@ public class AuthControllerTest {
       @Test
       void shouldReturnUnauthorized_whenInvalidEmail() throws Exception {
         // given
-        LoginRequest request = userTestHelper.createLoginRequest();
+        LoginRequest request = memberTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
-            new UnauthorizedException(UserErrorCode.LOGIN_FAILED));
+            new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 
         // when & then
         testHelper.postRequest(BASE_URL + "/login", request)
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.success").value(false))
-            .andExpect(jsonPath("$.code").value("USER_003"))
+            .andExpect(jsonPath("$.code").value("MEMBER_003"))
             .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."))
             .andDo(document("auth/login/fail-401/invalid-email", // 문서 파일명
                 resource(DocHelper.build(

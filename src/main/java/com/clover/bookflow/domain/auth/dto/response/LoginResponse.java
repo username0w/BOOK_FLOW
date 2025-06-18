@@ -1,6 +1,6 @@
 package com.clover.bookflow.domain.auth.dto.response;
 
-import com.clover.bookflow.domain.user.entity.User;
+import com.clover.bookflow.domain.member.entity.Member;
 
 public record LoginResponse(
 
@@ -9,8 +9,8 @@ public record LoginResponse(
     String token
 ) {
 
-  public static LoginResponse from(User user, String token) {
-    return new LoginResponse(user.getEmail(), user.getNickname(), token);
+  public static LoginResponse from(Member member, String token) {
+    return new LoginResponse(member.getEmail(), member.getNickname(), token);
   }
 
 }
