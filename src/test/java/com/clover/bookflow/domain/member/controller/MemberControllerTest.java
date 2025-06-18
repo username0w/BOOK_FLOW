@@ -1,11 +1,11 @@
-package com.clover.bookflow.domain.user.controller;
+package com.clover.bookflow.domain.member.controller;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 
 import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.SecurityConfig;
-import com.clover.bookflow.domain.user.helper.UserTestHelper;
-import com.clover.bookflow.domain.user.service.UserService;
+import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,10 +23,10 @@ import org.springframework.web.context.WebApplicationContext;
 // @WebMvcTest는 컨트롤러, 필터 등 웹 컴포넌트만 테스트하기 위한 어노테이션
 // - MockMvc를 자동 설정하기 위해 내부적으로 @AutoConfigureMockMvc 포함
 // - SecurityConfig는 명시적으로 @Import 필요
-@WebMvcTest(UserController.class) // 컨트롤러만 스캔해서 스프링컨테이너에 등록
+@WebMvcTest(MemberController.class) // 컨트롤러만 스캔해서 스프링컨테이너에 등록
 @Import(SecurityConfig.class)
 @ExtendWith({RestDocumentationExtension.class, SpringExtension.class})
-public class UserControllerTest {
+public class MemberControllerTest {
 
   @Autowired
   private MockMvc mockMvc;
@@ -42,14 +42,14 @@ public class UserControllerTest {
    * deprecated → @MockitoBean 사용 권장
    */
   @MockitoBean
-  private UserService userService;
+  private MemberService memberService;
 
   @Autowired
   private WebApplicationContext context;
 
 //  private RestDocumentationResultHandler restDocs;
 
-  private UserTestHelper userTestHelper;
+  private MemberTestHelper memberTestHelper;
   private TestHelper testHelper;
 
   @BeforeEach
@@ -61,7 +61,7 @@ public class UserControllerTest {
         .build();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    userTestHelper = new UserTestHelper();
+    memberTestHelper = new MemberTestHelper();
   }
 
 

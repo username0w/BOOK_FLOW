@@ -12,13 +12,13 @@ import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
-import com.clover.bookflow.domain.auth.security.CustomUserDetails;
+import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.auth.security.JwtProvider;
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.helper.UserTestHelper;
-import com.clover.bookflow.domain.user.repository.UserRepository;
-import com.clover.bookflow.domain.user.service.UserService;
-import com.clover.bookflow.global.errorcode.UserErrorCode;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
+import com.clover.bookflow.domain.member.service.MemberService;
+import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
 import java.util.Optional;
@@ -37,7 +37,7 @@ import org.springframework.security.core.Authentication;
 public class AuthServiceTest {
 
   @Mock
-  private UserService userService;
+  private MemberService memberService;
 
   @Mock
   private AuthenticationManager authenticationManager;
@@ -46,28 +46,29 @@ public class AuthServiceTest {
   private JwtProvider jwtProvider;
 
   @Mock
-  private UserRepository userRepository;
+  private MemberRepository memberRepository;
 
   private AuthService authService;
 
-  private UserTestHelper userTestHelper;
+  private MemberTestHelper memberTestHelper;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthService(userService, authenticationManager, jwtProvider, userRepository);
-    userTestHelper = new UserTestHelper();
+    authService = new AuthService(memberService, authenticationManager, jwtProvider,
+        memberRepository);
+    memberTestHelper = new MemberTestHelper();
   }
 
   @DisplayName("회원가입 후 JWT 토큰 발급 성공 테스트")
   @Test
   void shouldReturnToken_whenSignupCredentialsAreValid() {
     // given
-    SignupRequest signupRequest = userTestHelper.createSignupRequest();
+    SignupRequest signupRequest = memberTestHelper.createSignupRequest();
 
-    // Mock userService의 회원가입 로직
-    User savedUser = new User(signupRequest.email(), signupRequest.password(),
+    // Mock memberService의 회원가입 로직
+    Member savedMember = new Member(signupRequest.email(), signupRequest.password(),
         signupRequest.nickname());
-    given(userService.signup(any(SignupRequest.class))).willReturn(savedUser);
+    given(memberService.signup(any(SignupRequest.class))).willReturn(savedMember);
 
     // Mock JWT 발급
     String expectedToken = "jwt-token";
@@ -78,23 +79,23 @@ public class AuthServiceTest {
 
     // then
     // 응답 검증
-    assertThat(response.email()).isEqualTo(savedUser.getEmail());
-    assertThat(response.nickname()).isEqualTo(savedUser.getNickname());
+    assertThat(response.email()).isEqualTo(savedMember.getEmail());
+    assertThat(response.nickname()).isEqualTo(savedMember.getNickname());
     assertThat(response.token()).isEqualTo(expectedToken);
 
-    verify(userService).signup(signupRequest);
+    verify(memberService).signup(signupRequest);
     verify(jwtProvider).createToken(any(Authentication.class));
   }
 
-  @DisplayName("UserService.signup() 예외가 발생하면 AuthService.signup()도 예외를 던진다")
+  @DisplayName("MemberService.signup() 예외가 발생하면 AuthService.signup()도 예외를 던진다")
   @Test
   void shouldThrowException_whenUserServiceSignupThrows() {
     // given
     String existingEmail = "duplicate@example.com";
-    SignupRequest signupRequest = userTestHelper.createInvalidSignupRequest(existingEmail, null,
+    SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(existingEmail, null,
         null);
-    given(userService.signup(any(SignupRequest.class))).willThrow(
-        new DuplicateResourceException(UserErrorCode.EMAIL_ALREADY_EXISTS));
+    given(memberService.signup(any(SignupRequest.class))).willThrow(
+        new DuplicateResourceException(MemberErrorCode.EMAIL_ALREADY_EXISTS));
 
     // when, then
     DuplicateResourceException exception = assertThrows(DuplicateResourceException.class,
@@ -106,13 +107,13 @@ public class AuthServiceTest {
   @Test
   void shouldReturnToken_whenLoginCredentialsAreValid() {
     // given
-    LoginRequest loginRequest = userTestHelper.createLoginRequest();
+    LoginRequest loginRequest = memberTestHelper.createLoginRequest();
 
     // 인증된 유저객체
-    // userRepository 에서 받아오기
+    // memberRepository 에서 받아오기
     // UserDetails
-    User user = new User("test@example.com", "password123", "개똥이");
-    CustomUserDetails userDetails = new CustomUserDetails(user);
+    Member member = new Member("test@example.com", "password123", "개똥이");
+    CustomMemberDetails userDetails = new CustomMemberDetails(member);
 
     Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null,
         userDetails.getAuthorities());
@@ -132,8 +133,8 @@ public class AuthServiceTest {
 //    given(authenticationManager.authenticate(
 //        any(UsernamePasswordAuthenticationToken.class))).willReturn(auth);
 
-    given(userRepository.findById(userDetails.getId()))
-        .willReturn(Optional.of(user));
+    given(memberRepository.findById(userDetails.getId()))
+        .willReturn(Optional.of(member));
 
     String expectedToken = "jwt-token";
     given(jwtProvider.createToken(auth)).willReturn(expectedToken);
@@ -155,7 +156,7 @@ public class AuthServiceTest {
   void shouldThrowUnauthorizedException_whenPasswordIsInvalid() {
     // given
     String wrongPassword = "wrongPassword";
-    LoginRequest loginRequest = userTestHelper.createInvalidLoginRequest(null, wrongPassword);
+    LoginRequest loginRequest = memberTestHelper.createInvalidLoginRequest(null, wrongPassword);
 
     // authenticationManager.authenticate(...) 호출 시 비밀번호 오류로 인증 실패 시뮬레이션
     given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
@@ -167,7 +168,7 @@ public class AuthServiceTest {
         () -> authService.login(loginRequest));
 
     // then
-    assertThat(exception.getErrorCode()).isEqualTo(UserErrorCode.LOGIN_FAILED);
+    assertThat(exception.getErrorCode()).isEqualTo(MemberErrorCode.LOGIN_FAILED);
 
     verify(authenticationManager, times(1)).authenticate(
         any(UsernamePasswordAuthenticationToken.class));
@@ -179,7 +180,7 @@ public class AuthServiceTest {
   void shouldThrowUnauthorizedException_whenEmailIsInvalid() {
     // given
     String wrongEmail = "wrong@example.com";
-    LoginRequest loginRequest = userTestHelper.createInvalidLoginRequest(wrongEmail, null);
+    LoginRequest loginRequest = memberTestHelper.createInvalidLoginRequest(wrongEmail, null);
 
     given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
         .willThrow(new BadCredentialsException("Bad credentials"));
@@ -189,7 +190,7 @@ public class AuthServiceTest {
         () -> authService.login(loginRequest));
 
     // then
-    assertThat(exception.getErrorCode()).isEqualTo(UserErrorCode.LOGIN_FAILED);
+    assertThat(exception.getErrorCode()).isEqualTo(MemberErrorCode.LOGIN_FAILED);
 
     verify(authenticationManager, times(1)).authenticate(
         any(UsernamePasswordAuthenticationToken.class));

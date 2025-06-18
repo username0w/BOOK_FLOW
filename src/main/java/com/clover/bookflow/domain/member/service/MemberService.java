@@ -1,9 +1,9 @@
-package com.clover.bookflow.domain.user.service;
+package com.clover.bookflow.domain.member.service;
 
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.repository.UserRepository;
-import com.clover.bookflow.global.errorcode.UserErrorCode;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
+import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,14 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor // 생성자 주입이 더 안전, 깔끔
-public class UserService {
+public class MemberService {
 
-  private final UserRepository userRepository;
+  private final MemberRepository memberRepository;
 
   private final PasswordEncoder passwordEncoder;
 
   @Transactional
-  public User signup(SignupRequest request) {
+  public Member signup(SignupRequest request) {
     log.info("회원가입 시도: {}", request);
 
     // 입력값 자체 검사는 커스텀 어노테이션
@@ -33,21 +33,21 @@ public class UserService {
 
     String encodedPassword = passwordEncoder.encode(request.password());
 
-    // User 도메인 객체 생성 (정적 팩토리 메서드 사용)
-    User user = User.create(request.email(), encodedPassword, request.nickname());
+    // Member 도메인 객체 생성 (정적 팩토리 메서드 사용)
+    Member member = Member.create(request.email(), encodedPassword, request.nickname());
 
-    return userRepository.save(user);
+    return memberRepository.save(member);
   }
 
   private void validateDuplicateEmail(String email) {
-    if (userRepository.existsByEmail(email)) {
-      throw new DuplicateResourceException(UserErrorCode.EMAIL_ALREADY_EXISTS);
+    if (memberRepository.existsByEmail(email)) {
+      throw new DuplicateResourceException(MemberErrorCode.EMAIL_ALREADY_EXISTS);
     }
   }
 
   private void validateDuplicateNickname(String nickname) {
-    if (userRepository.existsByNickname(nickname)) {
-      throw new DuplicateResourceException(UserErrorCode.NICKNAME_ALREADY_EXISTS);
+    if (memberRepository.existsByNickname(nickname)) {
+      throw new DuplicateResourceException(MemberErrorCode.NICKNAME_ALREADY_EXISTS);
     }
   }
 

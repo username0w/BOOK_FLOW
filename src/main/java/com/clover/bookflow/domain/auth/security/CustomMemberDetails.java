@@ -1,7 +1,7 @@
 package com.clover.bookflow.domain.auth.security;
 
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.enums.UserStatus;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.enums.MemberStatus;
 import java.util.Collection;
 import java.util.List;
 import lombok.Getter;
@@ -9,21 +9,21 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-public class CustomUserDetails implements UserDetails {
+public class CustomMemberDetails implements UserDetails {
 
   @Getter
   private final Long id;
   private final String email;
   private final String password;
   private final List<GrantedAuthority> authorities;
-  private final UserStatus userStatus;
+  private final MemberStatus memberStatus;
 
-  public CustomUserDetails(User user) {
-    this.id = user.getId();
-    this.email = user.getEmail();
-    this.password = user.getPassword();  // 암호화된 상태
-    this.userStatus = user.getUserStatus();
-    this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()));
+  public CustomMemberDetails(Member member) {
+    this.id = member.getId();
+    this.email = member.getEmail();
+    this.password = member.getPassword();  // 암호화된 상태
+    this.memberStatus = member.getMemberStatus();
+    this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + member.getRole().name()));
     // 현재 부여된 Role 이 하나여도 Collection 반환이 인터페이스 강제
   }
 
@@ -32,8 +32,8 @@ public class CustomUserDetails implements UserDetails {
   public Collection<? extends GrantedAuthority> getAuthorities() {
     return authorities;
   }
-  // User 에는 문자열 형태
-  // CustomUserDetails 에는 이미 변환된 형태로 저장
+  // Member 에는 문자열 형태
+  // CustomMemberDetails 에는 이미 변환된 형태로 저장
 
 
   @Override
@@ -53,7 +53,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public boolean isAccountNonLocked() {
-    return userStatus != UserStatus.SUSPENDED;
+    return memberStatus != MemberStatus.SUSPENDED;
   }
 
   @Override
@@ -63,7 +63,7 @@ public class CustomUserDetails implements UserDetails {
 
   @Override
   public boolean isEnabled() {
-    return userStatus == UserStatus.ACTIVE;
+    return memberStatus == MemberStatus.ACTIVE;
   }
 
   // Todo: 권한 변환 작업

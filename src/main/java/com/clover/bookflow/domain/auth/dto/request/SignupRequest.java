@@ -20,5 +20,5 @@ public record SignupRequest(
     String nickname
 ) {
 
-  // DTO 에 toEntity 메서드를 두지 않음: Entity 생성 책임은 도메인 내부(User.create)에서 수행
+  // DTO 에 toEntity 메서드를 두지 않음: Entity 생성 책임은 도메인 내부(Member.create)에서 수행
 }

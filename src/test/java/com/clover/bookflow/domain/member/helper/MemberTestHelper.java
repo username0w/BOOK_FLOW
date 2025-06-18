@@ -1,11 +1,11 @@
-package com.clover.bookflow.domain.user.helper;
+package com.clover.bookflow.domain.member.helper;
 
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
 
-public class UserTestHelper {
+public class MemberTestHelper {
 
   private static final String DEFAULT_EMAIL = "test@example.com";
   private static final String DEFAULT_PASSWORD = "password123";

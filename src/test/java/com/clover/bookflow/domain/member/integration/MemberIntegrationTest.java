@@ -1,7 +1,7 @@
-package com.clover.bookflow.domain.user.integration;
+package com.clover.bookflow.domain.member.integration;
 
 import com.clover.bookflow.config.AbstractIntegrationTest;
-import com.clover.bookflow.domain.user.repository.UserRepository;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-public class UserIntegrationTest extends AbstractIntegrationTest {
+public class MemberIntegrationTest extends AbstractIntegrationTest {
 
   // 단위테스트와 달리 통합테스트에서 필드 주입한 이유
   // 이유1. 생성자 주입이 통합에서 큰 이점 없다.
@@ -28,11 +28,11 @@ public class UserIntegrationTest extends AbstractIntegrationTest {
   private ObjectMapper objectMapper;
 
   @Autowired
-  private UserRepository userRepository;
+  private MemberRepository memberRepository;
 
   @BeforeEach
   void clean() {
-    userRepository.deleteAll();
+    memberRepository.deleteAll();
   }
 
 }

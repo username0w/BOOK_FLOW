@@ -8,10 +8,10 @@ import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.AbstractIntegrationTest;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.user.entity.User;
-import com.clover.bookflow.domain.user.helper.UserTestHelper;
-import com.clover.bookflow.domain.user.repository.UserRepository;
-import com.clover.bookflow.domain.user.service.UserService;
+import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.repository.MemberRepository;
+import com.clover.bookflow.domain.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,20 +35,20 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
   private ObjectMapper objectMapper;
 
   @Autowired
-  private UserService userService;
+  private MemberService memberService;
 
   @Autowired
-  private UserRepository userRepository;
+  private MemberRepository memberRepository;
 
   private TestHelper testHelper;
-  private UserTestHelper userTestHelper;
+  private MemberTestHelper memberTestHelper;
 
   @BeforeEach
   void clean() {
-    userRepository.deleteAll();
+    memberRepository.deleteAll();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    userTestHelper = new UserTestHelper();
+    memberTestHelper = new MemberTestHelper();
   }
 
   @Nested
@@ -58,7 +58,7 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("회원가입 성공 시 201 Created 응답을 반환한다.")
     @Test
     void shouldReturn201_whenSignupSuccess() throws Exception {
-      SignupRequest request = userTestHelper.createSignupRequest();
+      SignupRequest request = memberTestHelper.createSignupRequest();
 
       testHelper.postRequest(BASE_URL + "/signup", request)
           .andExpect(status().isCreated())
@@ -70,15 +70,15 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnConflict_whenEmailIsDuplicate() throws Exception {
       // given
-      userRepository.save(User.create("test@example.com", "encodedPW", "길똥이"));
+      memberRepository.save(Member.create("test@example.com", "encodedPW", "길똥이"));
 
-      SignupRequest request = userTestHelper.createSignupRequest();
+      SignupRequest request = memberTestHelper.createSignupRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/signup", request)
           .andExpect(status().isConflict())
           .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("USER_004"))
+          .andExpect(jsonPath("$.code").value("MEMBER_004"))
           .andExpect(jsonPath("$.message").value("이미 등록된 이메일입니다."));
     }
 
@@ -86,15 +86,15 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnConflict_whenNicknameIsDuplicate() throws Exception {
       // given
-      userRepository.save(User.create("user@example.com", "userpassword", "testNickname"));
+      memberRepository.save(Member.create("user@example.com", "userpassword", "testNickname"));
 
-      SignupRequest request = userTestHelper.createSignupRequest();
+      SignupRequest request = memberTestHelper.createSignupRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/signup", request)
           .andExpect(status().isConflict())
           .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("USER_005"))
+          .andExpect(jsonPath("$.code").value("MEMBER_005"))
           .andExpect(jsonPath("$.message").value("이미 존재하는 닉네임입니다."));
     }
 
@@ -108,10 +108,10 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("로그인 성공 시 200 Ok 응답을 반환한다")
     @Test
     void shouldReturn200_whenLoginSuccess() throws Exception {
-      SignupRequest signupRequest = userTestHelper.createSignupRequest();
-      userService.signup(signupRequest);
+      SignupRequest signupRequest = memberTestHelper.createSignupRequest();
+      memberService.signup(signupRequest);
 
-      LoginRequest request = userTestHelper.createLoginRequest();
+      LoginRequest request = memberTestHelper.createLoginRequest();
 
       testHelper.postRequest(BASE_URL + "/login", request)
           .andExpect(status().isOk())
@@ -125,15 +125,15 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnUnauthorized_whenWrongPassword() throws Exception {
       // given
-      userRepository.save(User.create("test@example.com", "encodedPW", "길똥이"));
+      memberRepository.save(Member.create("test@example.com", "encodedPW", "길똥이"));
 
-      LoginRequest request = userTestHelper.createLoginRequest();
+      LoginRequest request = memberTestHelper.createLoginRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/login", request)
           .andExpect(status().isUnauthorized())
           .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("USER_003"))
+          .andExpect(jsonPath("$.code").value("MEMBER_003"))
           .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."));
 
     }
@@ -142,13 +142,13 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnUnauthorized_whenWrongEmail() throws Exception {
       // given
-      LoginRequest request = userTestHelper.createLoginRequest();
+      LoginRequest request = memberTestHelper.createLoginRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/login", request)
           .andExpect(status().isUnauthorized())
           .andExpect(jsonPath("$.success").value(false))
-          .andExpect(jsonPath("$.code").value("USER_003"))
+          .andExpect(jsonPath("$.code").value("MEMBER_003"))
           .andExpect(jsonPath("$.message").value("아이디 또는 비밀번호가 일치하지 않습니다."));
 
     }
