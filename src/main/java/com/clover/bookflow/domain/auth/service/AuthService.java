@@ -1,49 +1,61 @@
 package com.clover.bookflow.domain.auth.service;
 
+import com.clover.bookflow.domain.auth.domain.TokenPair;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
-import com.clover.bookflow.domain.auth.security.JwtProvider;
+import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
+import com.clover.bookflow.domain.auth.token.repository.RefreshTokenRepository;
+import com.clover.bookflow.domain.auth.token.service.TokenService;
 import com.clover.bookflow.domain.member.entity.Member;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.domain.member.service.MemberService;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.BusinessException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class AuthService {
 
   private final MemberService memberService;
+  private final TokenService tokenService;
   private final AuthenticationManager authenticationManager;
-  private final JwtProvider jwtProvider;
   private final MemberRepository memberRepository;
+  private final RefreshTokenRepository refreshTokenRepository;
 
   // 회원가입 시 jwt 토큰 발급
   public SignupResponse signup(SignupRequest signupRequest) {
     // 1. 사용자 정보 저장 (memberService 내부에서 중복 체크 및 인코딩 수행)
     Member member = memberService.signup(signupRequest);
 
-    // 2. 회원가입이 성공하면 Authentication 객체 생성 (SecurityContext 에 저장되지는 않음)
-    Authentication authentication = new UsernamePasswordAuthenticationToken(
-        member.getEmail(), signupRequest.password());
+    // 2. 권한 추출
+    List<String> roles = List.of("ROLE_" + member.getRole().name());
+
+    // => JWT stateless 방식을 위해 기존 수등 등록 방식에서 클라이언트가 응답 토큰으로 요청하도록 변경
 
     // 3. JWT 토큰 생성
-    String token = jwtProvider.createToken(authentication);
+    TokenPair tokenPair = tokenService.issueTokens(member.getEmail(), roles);
 
-    return SignupResponse.from(member, token);
+    // 4. RefreshToken 저장
+    refreshTokenRepository.save(RefreshToken.create(member, tokenPair.refreshToken()));
+
+    return SignupResponse.from(member, tokenPair);
 
   }
 
@@ -70,10 +82,17 @@ public class AuthService {
           .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND)
           );
 
-      // 3. JWT 토큰 생성
-      String token = jwtProvider.createToken(auth);
+      List<String> roles = userDetails.getAuthorities().stream()
+          .map(GrantedAuthority::getAuthority)
+          .toList();
 
-      return LoginResponse.from(member, token);
+      // 3. JWT 토큰 생성
+      TokenPair tokenPair = tokenService.issueTokens(userDetails.getUsername(), roles);
+
+      // refreshToken 저장
+      refreshTokenRepository.save(RefreshToken.create(member, tokenPair.refreshToken()));
+
+      return LoginResponse.from(member, tokenPair);
     } catch (BadCredentialsException e) {
       throw new UnauthorizedException(MemberErrorCode.LOGIN_FAILED);
     }
@@ -85,5 +104,6 @@ public class AuthService {
      * */
   }
 
+  // 회원가입 후 바로 토큰 반환, 로그인도 토큰 반환 => 별도 메서드로 분리 => TokenService
 
 }

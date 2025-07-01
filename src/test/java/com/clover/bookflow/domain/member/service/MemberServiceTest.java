@@ -6,9 +6,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
+import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.member.entity.Member;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,13 +32,13 @@ public class MemberServiceTest {
 
   private MemberService memberService;
 
-  private MemberTestHelper memberTestHelper;
+  private AuthTestHelper authTestHelper;
 
   // 필드 주입에서 생성자 주입으로 변경으로 인한 수정
   @BeforeEach
   void setUp() {
     memberService = new MemberService(memberRepository, passwordEncoder);
-    memberTestHelper = new MemberTestHelper();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Nested
@@ -49,7 +49,7 @@ public class MemberServiceTest {
     @Test
     void shouldSaveMember_whenSignupCredentialsAreValid() {
       // given
-      SignupRequest request = memberTestHelper.createSignupRequest();
+      SignupRequest request = authTestHelper.createSignupRequest();
       String encodedPW = "encodedPW";
 
       given(memberRepository.existsByEmail(request.email())).willReturn(false);
@@ -87,7 +87,7 @@ public class MemberServiceTest {
     void shouldThrowException_WhenEmailAlreadyExists() {
       // given
       String existingEmail = "hkd111@example.com";
-      SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(existingEmail,
+      SignupRequest signupRequest = authTestHelper.createInvalidSignupRequest(existingEmail,
           null, null);
       given(memberRepository.existsByEmail(existingEmail)).willReturn(true);
 
@@ -105,7 +105,7 @@ public class MemberServiceTest {
     void shouldThrowException_WhenNicknameAlreadyExists() {
       // given
       String duplicatedNickname = "길똥이";
-      SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(null, null,
+      SignupRequest signupRequest = authTestHelper.createInvalidSignupRequest(null, null,
           duplicatedNickname);
       given(memberRepository.existsByNickname(duplicatedNickname)).willReturn(true);
 

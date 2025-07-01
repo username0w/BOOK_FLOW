@@ -68,7 +68,6 @@ public class TokenService {
     return TokenResponse.from(tokenPair);
   }
 
-  // Todo : logout 시 토큰 삭제
   public void logout(String refreshToken) {
     String jti = jwtProvider.getJtiFromToken(refreshToken);
     refreshTokenRepository.deleteByJti(jti);

@@ -13,12 +13,15 @@ public record ApiResponse<T>(
 
   // success
   public static <T> ApiResponse<T> success(T data) {
+    return new ApiResponse<>(true, "200", "요청이 성공적으로 처리되었습니다.", data, List.of());
+  }
+
+  public static <T> ApiResponse<T> created(T data) {
     return new ApiResponse<>(true, "201", "요청을 성공적으로 보냈습니다.", data, List.of());
   }
 
-
-  public static <T> ApiResponse<T> success(String code, String message, T data) {
-    return new ApiResponse<>(true, code, message, data, List.of());
+  public static <T> ApiResponse<T> noContent() {
+    return new ApiResponse<>(true, "204", "요청이 성공적으로 처리되었으며 반환할 데이터가 없습니다.", null, List.of());
   }
 
   // failure
