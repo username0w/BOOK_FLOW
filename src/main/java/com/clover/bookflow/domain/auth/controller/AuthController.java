@@ -40,8 +40,8 @@ public class AuthController {
       @Valid @RequestBody SignupRequest signupRequest) {
     SignupResponse signupResponse = authService.signup(signupRequest);
 
-    String accessToken = signupResponse.accessToken().token();
-    String refreshToken = signupResponse.refreshToken().token();
+    String accessToken = signupResponse.tokenResponse().accessToken().token();
+    String refreshToken = signupResponse.tokenResponse().refreshToken().token();
 
     String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
@@ -59,8 +59,8 @@ public class AuthController {
       @Valid @RequestBody LoginRequest loginRequest) {
     LoginResponse loginResponse = authService.login(loginRequest);
 
-    String accessToken = loginResponse.accessToken().token();
-    String refreshToken = loginResponse.refreshToken().token();
+    String accessToken = loginResponse.tokenResponse().accessToken().token();
+    String refreshToken = loginResponse.tokenResponse().refreshToken().token();
 
     String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));

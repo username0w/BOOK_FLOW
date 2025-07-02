@@ -88,7 +88,7 @@ public class TokenServiceTest {
         AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA);
 
     // when
-    TokenResponse result = tokenService.reissueToken(refreshToken);
+    TokenResponse result = tokenService.refreshToken(refreshToken);
 
     // then
     assertThat(result.accessToken().token()).isEqualTo(
@@ -109,7 +109,7 @@ public class TokenServiceTest {
     given(jwtProvider.getJtiFromToken(refreshToken)).willReturn(jti);
     given(refreshTokenRepository.findByJti(jti)).willReturn(Optional.empty());
 
-    assertThrows(InvalidTokenException.class, () -> tokenService.reissueToken(refreshToken));
+    assertThrows(InvalidTokenException.class, () -> tokenService.refreshToken(refreshToken));
   }
 
   @DisplayName("만료된 RefreshToken으로 재발급 요청하면 TokenExpiredException 예외가 발생한다")
@@ -123,7 +123,7 @@ public class TokenServiceTest {
     given(jwtProvider.getJtiFromToken(refreshToken)).willReturn(jti);
     given(refreshTokenRepository.findByJti(jti)).willReturn(Optional.of(expiredToken));
 
-    assertThrows(TokenExpiredException.class, () -> tokenService.reissueToken(refreshToken));
+    assertThrows(TokenExpiredException.class, () -> tokenService.refreshToken(refreshToken));
   }
 
   @DisplayName("DB에 없는 멤버로 재발급 요청하면 BusinessException 예외가 발생한다")
@@ -140,7 +140,7 @@ public class TokenServiceTest {
     given(jwtProvider.getEmailFromToken(refreshToken)).willReturn(member.getEmail());
     given(memberRepository.findByEmail(member.getEmail())).willReturn(Optional.empty());
 
-    assertThrows(BusinessException.class, () -> tokenService.reissueToken(refreshToken));
+    assertThrows(BusinessException.class, () -> tokenService.refreshToken(refreshToken));
   }
 
   @Test

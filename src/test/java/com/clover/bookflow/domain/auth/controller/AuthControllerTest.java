@@ -13,13 +13,14 @@ import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.SecurityConfig;
 import com.clover.bookflow.docs.DocHelper;
 import com.clover.bookflow.docs.auth.AuthDocs;
+import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
 import com.clover.bookflow.domain.auth.security.JwtAuthenticationFilter;
 import com.clover.bookflow.domain.auth.service.AuthService;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.auth.token.service.TokenService;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
@@ -60,13 +61,16 @@ public class AuthControllerTest {
   private AuthService authService;
 
   @MockitoBean
+  private TokenService tokenService;
+
+  @MockitoBean
   private JwtAuthenticationFilter jwtAuthenticationFilter;
 
   @Autowired
   private WebApplicationContext context;
 
   private TestHelper testHelper;
-  private MemberTestHelper memberTestHelper;
+  private AuthTestHelper authTestHelper;
 
   @BeforeEach
   void setUp(RestDocumentationContextProvider provider) {
@@ -75,7 +79,7 @@ public class AuthControllerTest {
         .build();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    memberTestHelper = new MemberTestHelper();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Nested
@@ -90,8 +94,8 @@ public class AuthControllerTest {
       @Test
       void shouldReturn201_whenSignupSuccess() throws Exception {
         // given
-        SignupRequest request = memberTestHelper.createSignupRequest();
-        SignupResponse response = memberTestHelper.createSignupResponse();
+        SignupRequest request = authTestHelper.createSignupRequest();
+        SignupResponse response = authTestHelper.createSignupResponse();
 
         given(authService.signup(any(SignupRequest.class))).willReturn(response);
         // 여기 any 사용해도 request 는 mockMvc.perform 에 필요
@@ -221,7 +225,7 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenEmailIsDuplicate() throws Exception {
         // given
         String duplicatedEmail = "duplicate@example.com";
-        SignupRequest request = memberTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
+        SignupRequest request = authTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
             null);
 
         given(authService.signup(request)).willThrow(
@@ -249,7 +253,7 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenNicknameIsDuplicate() throws Exception {
         // given
         String duplicateNickname = "중복닉네임";
-        SignupRequest request = memberTestHelper.createInvalidSignupRequest(null, null,
+        SignupRequest request = authTestHelper.createInvalidSignupRequest(null, null,
             duplicateNickname);
 
         given(authService.signup(request)).willThrow(
@@ -288,8 +292,8 @@ public class AuthControllerTest {
       @Test
       void shouldReturn200_whenLoginSuccess() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
-        LoginResponse response = memberTestHelper.createLoginResponse();
+        LoginRequest request = authTestHelper.createLoginRequest();
+        LoginResponse response = authTestHelper.createLoginResponse();
         given(authService.login(any(LoginRequest.class))).willReturn(response);
 
         // when & then
@@ -316,7 +320,7 @@ public class AuthControllerTest {
       @Test
       void shouldReturnUnauthorized_whenWrongPassword() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
+        LoginRequest request = authTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
             new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 
@@ -342,7 +346,7 @@ public class AuthControllerTest {
       @Test
       void shouldReturnUnauthorized_whenInvalidEmail() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
+        LoginRequest request = authTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
             new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 

@@ -4,7 +4,9 @@ import com.clover.bookflow.domain.auth.domain.TokenWithMeta;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
+import com.clover.bookflow.domain.auth.dto.response.MemberInfoResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.TokenResponse;
 import com.clover.bookflow.domain.auth.token.dto.AccessTokenInfo;
 import com.clover.bookflow.domain.auth.token.dto.RefreshTokenInfo;
 import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
@@ -49,8 +51,10 @@ public class AuthTestHelper {
   }
 
   public SignupResponse createSignupResponse() {
-    return new SignupResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_ACCESS_TOKEN_INFO,
-        DEFAULT_REFRESH_TOKEN_INFO);
+    return new SignupResponse(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new TokenResponse(DEFAULT_ACCESS_TOKEN_INFO,
+            DEFAULT_REFRESH_TOKEN_INFO));
   }
 
   public LoginRequest createLoginRequest() {
@@ -65,8 +69,10 @@ public class AuthTestHelper {
   }
 
   public LoginResponse createLoginResponse() {
-    return new LoginResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_ACCESS_TOKEN_INFO,
-        DEFAULT_REFRESH_TOKEN_INFO);
+    return new LoginResponse(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new TokenResponse(DEFAULT_ACCESS_TOKEN_INFO,
+            DEFAULT_REFRESH_TOKEN_INFO));
   }
 
   public static RefreshToken createRefreshToken(Member member) {

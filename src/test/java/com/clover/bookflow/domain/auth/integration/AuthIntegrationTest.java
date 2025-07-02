@@ -6,10 +6,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.clover.bookflow.common.ApiPath;
 import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.AbstractIntegrationTest;
+import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
+import com.clover.bookflow.domain.auth.token.repository.RefreshTokenRepository;
 import com.clover.bookflow.domain.member.entity.Member;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.domain.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,15 +41,19 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
   @Autowired
   private MemberRepository memberRepository;
 
+  @Autowired
+  private RefreshTokenRepository refreshTokenRepository;
+
   private TestHelper testHelper;
-  private MemberTestHelper memberTestHelper;
+  private AuthTestHelper authTestHelper;
 
   @BeforeEach
   void clean() {
+    refreshTokenRepository.deleteAll();
     memberRepository.deleteAll();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    memberTestHelper = new MemberTestHelper();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Nested
@@ -58,12 +63,12 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("회원가입 성공 시 201 Created 응답을 반환한다.")
     @Test
     void shouldReturn201_whenSignupSuccess() throws Exception {
-      SignupRequest request = memberTestHelper.createSignupRequest();
+      SignupRequest request = authTestHelper.createSignupRequest();
 
       testHelper.postRequest(BASE_URL + "/signup", request)
           .andExpect(status().isCreated())
-          .andExpect(jsonPath("$.data.email").value("test@example.com"))
-          .andExpect(jsonPath("$.data.nickname").value("testNickname"));
+          .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+          .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"));
     }
 
     @DisplayName("이메일 중복 시 409 Conflict 응답을 반환한다")
@@ -72,7 +77,7 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
       // given
       memberRepository.save(Member.create("test@example.com", "encodedPW", "길똥이"));
 
-      SignupRequest request = memberTestHelper.createSignupRequest();
+      SignupRequest request = authTestHelper.createSignupRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/signup", request)
@@ -88,7 +93,7 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
       // given
       memberRepository.save(Member.create("user@example.com", "userpassword", "testNickname"));
 
-      SignupRequest request = memberTestHelper.createSignupRequest();
+      SignupRequest request = authTestHelper.createSignupRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/signup", request)
@@ -108,16 +113,16 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @DisplayName("로그인 성공 시 200 Ok 응답을 반환한다")
     @Test
     void shouldReturn200_whenLoginSuccess() throws Exception {
-      SignupRequest signupRequest = memberTestHelper.createSignupRequest();
+      SignupRequest signupRequest = authTestHelper.createSignupRequest();
       memberService.signup(signupRequest);
 
-      LoginRequest request = memberTestHelper.createLoginRequest();
+      LoginRequest request = authTestHelper.createLoginRequest();
 
       testHelper.postRequest(BASE_URL + "/login", request)
           .andExpect(status().isOk())
           .andExpect(jsonPath("$.success").value(true))
-          .andExpect(jsonPath("$.data.email").value("test@example.com"))
-          .andExpect(jsonPath("$.data.nickname").value("testNickname"));
+          .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+          .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"));
 
     }
 
@@ -127,7 +132,7 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
       // given
       memberRepository.save(Member.create("test@example.com", "encodedPW", "길똥이"));
 
-      LoginRequest request = memberTestHelper.createLoginRequest();
+      LoginRequest request = authTestHelper.createLoginRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/login", request)
@@ -142,7 +147,7 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     void shouldReturnUnauthorized_whenWrongEmail() throws Exception {
       // given
-      LoginRequest request = memberTestHelper.createLoginRequest();
+      LoginRequest request = authTestHelper.createLoginRequest();
 
       // when & then
       testHelper.postRequest(BASE_URL + "/login", request)

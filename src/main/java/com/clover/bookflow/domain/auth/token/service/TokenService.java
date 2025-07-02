@@ -39,7 +39,7 @@ public class TokenService {
     return TokenPair.of(accessToken, refreshToken);
   }
 
-  public TokenResponse reissueToken(String refreshToken) {
+  public TokenResponse refreshToken(String refreshToken) {
     // jti 추출해서 DB 에 저장된 값과 매칭
     String jti = jwtProvider.getJtiFromToken(refreshToken);
     RefreshToken savedToken = refreshTokenRepository.findByJti(jti)

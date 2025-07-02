@@ -33,11 +33,11 @@ public class AuthDocs {
     return ApiDocs.combine(
         ApiDocs.commonFields(),
         List.of(
-            fieldWithPath("data.email").description("가입된 이메일"),
-            fieldWithPath("data.nickname").description("가입된 닉네임")
+            fieldWithPath("data.memberInfoResponse.email").description("가입된 이메일"),
+            fieldWithPath("data.memberInfoResponse.nickname").description("가입된 닉네임")
         ),
-        tokenFields("data.accessToken"),
-        List.of(fieldWithPath("data.refreshToken.token").description("토큰 값"))
+        tokenFields("data.tokenResponse.accessToken"),
+        List.of(fieldWithPath("data.tokenResponse.refreshToken.token").description("토큰 값"))
     );
   }
 
@@ -59,11 +59,11 @@ public class AuthDocs {
     return ApiDocs.combine(
         ApiDocs.commonFields(),
         List.of(
-            fieldWithPath("data.email").description("로그인된 이메일"),
-            fieldWithPath("data.nickname").description("로그인된 닉네임")
+            fieldWithPath("data.memberInfoResponse.email").description("로그인된 이메일"),
+            fieldWithPath("data.memberInfoResponse.nickname").description("로그인된 닉네임")
         ),
-        tokenFields("data.accessToken"),
-        List.of(fieldWithPath("data.refreshToken.token").description("토큰 값"))
+        tokenFields("data.tokenResponse.accessToken"),
+        List.of(fieldWithPath("data.tokenResponse.refreshToken.token").description("토큰 값"))
     );
   }
 

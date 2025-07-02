@@ -91,11 +91,11 @@ public class AuthServiceTest {
     SignupResponse response = authService.signup(signupRequest);
 
     // then
-    assertThat(response.email()).isEqualTo(savedMember.getEmail());
-    assertThat(response.nickname()).isEqualTo(savedMember.getNickname());
-    assertThat(response.accessToken()).isEqualTo(
+    assertThat(response.memberInfoResponse().email()).isEqualTo(savedMember.getEmail());
+    assertThat(response.memberInfoResponse().nickname()).isEqualTo(savedMember.getNickname());
+    assertThat(response.tokenResponse().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.refreshToken()).isEqualTo(
+    assertThat(response.tokenResponse().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(memberService).signup(signupRequest);
@@ -154,10 +154,10 @@ public class AuthServiceTest {
     LoginResponse response = authService.login(loginRequest);
 
     // then
-    assertThat(response.email()).isEqualTo(loginRequest.email());
-    assertThat(response.accessToken()).isEqualTo(
+    assertThat(response.memberInfoResponse().email()).isEqualTo(loginRequest.email());
+    assertThat(response.tokenResponse().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.refreshToken()).isEqualTo(
+    assertThat(response.tokenResponse().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
