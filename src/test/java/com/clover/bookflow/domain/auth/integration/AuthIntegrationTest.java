@@ -1,5 +1,8 @@
 package com.clover.bookflow.domain.auth.integration;
 
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,7 +24,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.test.web.servlet.MockMvc;
+
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -67,6 +72,12 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
 
       testHelper.postRequest(BASE_URL + "/signup", request)
           .andExpect(status().isCreated())
+          .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+          .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItems(
+              startsWith("accessToken="),
+              startsWith("refreshToken=")
+          )))
+          .andExpect(jsonPath("$.success").value(true))
           .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
           .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"));
     }
@@ -120,6 +131,11 @@ public class AuthIntegrationTest extends AbstractIntegrationTest {
 
       testHelper.postRequest(BASE_URL + "/login", request)
           .andExpect(status().isOk())
+          .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+          .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItems(
+              startsWith("accessToken="),
+              startsWith("refreshToken=")
+          )))
           .andExpect(jsonPath("$.success").value(true))
           .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
           .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"));

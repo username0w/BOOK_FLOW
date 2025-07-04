@@ -2,9 +2,12 @@ package com.clover.bookflow.domain.auth.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,6 +38,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -103,6 +107,14 @@ public class AuthControllerTest {
         // when & then
         testHelper.postRequest(BASE_URL + "/signup", request)
             .andExpect(status().isCreated()) // HTTP 201 기대
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItems(
+                startsWith("accessToken="),
+                startsWith("refreshToken=")
+            )))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+            .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"))
             .andDo(document("auth/signup/success-201", // 문서 파일명
                 resource(DocHelper.build(
                     AuthDocs.TAG,
@@ -299,6 +311,14 @@ public class AuthControllerTest {
         // when & then
         testHelper.postRequest(BASE_URL + "/login", request)
             .andExpect(status().isOk())
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().stringValues(HttpHeaders.SET_COOKIE, hasItems(
+                startsWith("accessToken="),
+                startsWith("refreshToken=")
+            )))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+            .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"))
             .andDo(document("auth/login/success-200", // 문서 파일명
                 resource(DocHelper.build(
                     AuthDocs.TAG,

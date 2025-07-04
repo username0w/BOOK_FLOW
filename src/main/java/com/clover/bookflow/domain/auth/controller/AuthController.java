@@ -45,14 +45,18 @@ public class AuthController {
     String accessToken = signupResult.tokenResponse().accessToken().token();
     String refreshToken = signupResult.tokenResponse().refreshToken().token();
 
-    String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
+    String accessTokenCookieString = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
-    String refreshTokenCookie = CookieUtil.createRefreshTokenCookie(refreshToken,
+    String refreshTokenCookieString = CookieUtil.createRefreshTokenCookie(refreshToken,
         (int) (refreshTokenExpiry / 1000));
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, accessTokenCookieString);
+    headers.add(HttpHeaders.SET_COOKIE, refreshTokenCookieString);
 
     return ResponseEntity
         .status(HttpStatus.CREATED)
-        .header(HttpHeaders.SET_COOKIE, accessTokenCookie, refreshTokenCookie)
+        .headers(headers)
         .body(ApiResponse.created(SignupResponse.from(signupResult.memberInfoResponse())));
   }
 
@@ -64,14 +68,18 @@ public class AuthController {
     String accessToken = loginResult.tokenResponse().accessToken().token();
     String refreshToken = loginResult.tokenResponse().refreshToken().token();
 
-    String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
+    String accessTokenCookieString = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
-    String refreshTokenCookie = CookieUtil.createRefreshTokenCookie(refreshToken,
+    String refreshTokenCookieString = CookieUtil.createRefreshTokenCookie(refreshToken,
         (int) (refreshTokenExpiry / 1000));
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, accessTokenCookieString);
+    headers.add(HttpHeaders.SET_COOKIE, refreshTokenCookieString);
 
     return ResponseEntity
         .ok()
-        .header(HttpHeaders.SET_COOKIE, accessTokenCookie, refreshTokenCookie)
+        .headers(headers)
         .body(ApiResponse.success(LoginResponse.from(loginResult.memberInfoResponse())));
   }
 
@@ -85,13 +93,17 @@ public class AuthController {
     String accessToken = tokenResponse.accessToken().token();
     String newRefreshToken = tokenResponse.refreshToken().token();
 
-    String accessCookie = CookieUtil.createAccessTokenCookie(accessToken,
+    String accessTokenCookieString = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
-    String refreshCookie = CookieUtil.createRefreshTokenCookie(newRefreshToken,
+    String refreshTokenCookieString = CookieUtil.createRefreshTokenCookie(newRefreshToken,
         (int) (refreshTokenExpiry / 1000));
 
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, accessTokenCookieString);
+    headers.add(HttpHeaders.SET_COOKIE, refreshTokenCookieString);
+
     return ResponseEntity.ok()
-        .header(HttpHeaders.SET_COOKIE, accessCookie, refreshCookie)
+        .headers(headers)
         .body(ApiResponse.success("Token refreshed"));
   }
 
@@ -103,8 +115,12 @@ public class AuthController {
     String clearRefresh = CookieUtil.deleteTokenCookie("refreshToken");
     tokenService.logout(refreshToken);
 
+    HttpHeaders headers = new HttpHeaders();
+    headers.add(HttpHeaders.SET_COOKIE, clearAccess);
+    headers.add(HttpHeaders.SET_COOKIE, clearRefresh);
+
     return ResponseEntity.ok()
-        .header(HttpHeaders.SET_COOKIE, clearAccess, clearRefresh)
+        .headers(headers)
         .body(ApiResponse.success("Logout success"));
   }
 
