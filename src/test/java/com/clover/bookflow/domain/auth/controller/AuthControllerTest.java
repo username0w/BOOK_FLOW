@@ -16,8 +16,8 @@ import com.clover.bookflow.docs.auth.AuthDocs;
 import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.security.JwtAuthenticationFilter;
 import com.clover.bookflow.domain.auth.service.AuthService;
 import com.clover.bookflow.domain.auth.token.service.TokenService;
@@ -95,9 +95,9 @@ public class AuthControllerTest {
       void shouldReturn201_whenSignupSuccess() throws Exception {
         // given
         SignupRequest request = authTestHelper.createSignupRequest();
-        SignupResponse response = authTestHelper.createSignupResponse();
+        SignupResult result = authTestHelper.createSignupResult();
 
-        given(authService.signup(any(SignupRequest.class))).willReturn(response);
+        given(authService.signup(any(SignupRequest.class))).willReturn(result);
         // 여기 any 사용해도 request 는 mockMvc.perform 에 필요
 
         // when & then
@@ -293,8 +293,8 @@ public class AuthControllerTest {
       void shouldReturn200_whenLoginSuccess() throws Exception {
         // given
         LoginRequest request = authTestHelper.createLoginRequest();
-        LoginResponse response = authTestHelper.createLoginResponse();
-        given(authService.login(any(LoginRequest.class))).willReturn(response);
+        LoginResult result = authTestHelper.createLoginResult();
+        given(authService.login(any(LoginRequest.class))).willReturn(result);
 
         // when & then
         testHelper.postRequest(BASE_URL + "/login", request)

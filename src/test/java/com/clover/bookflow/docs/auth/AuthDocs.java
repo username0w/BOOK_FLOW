@@ -14,12 +14,12 @@ public class AuthDocs {
   public static final String LOGIN_SUMMARY = "로그인 API";
   public static final String LOGIN_DESCRIPTION = "이메일, 비밀번호를 입력받아 로그인을 처리합니다.";
 
-  public static List<FieldDescriptor> tokenFields(String prefix) {
-    return List.of(
-        fieldWithPath(prefix + ".token").description("토큰 값"),
-        fieldWithPath(prefix + ".expiresAt").description("토큰 만료 시각 (ISO 8601 포맷, UTC 기준)")
-    );
-  }
+//  public static List<FieldDescriptor> tokenFields(String prefix) {
+//    return List.of(
+//        fieldWithPath(prefix + ".token").description("토큰 값"),
+//        fieldWithPath(prefix + ".expiresAt").description("토큰 만료 시각 (ISO 8601 포맷, UTC 기준)")
+//    );
+//  }
 
   public static List<FieldDescriptor> signupRequest() {
     return List.of(
@@ -35,9 +35,7 @@ public class AuthDocs {
         List.of(
             fieldWithPath("data.memberInfoResponse.email").description("가입된 이메일"),
             fieldWithPath("data.memberInfoResponse.nickname").description("가입된 닉네임")
-        ),
-        tokenFields("data.tokenResponse.accessToken"),
-        List.of(fieldWithPath("data.tokenResponse.refreshToken.token").description("토큰 값"))
+        )
     );
   }
 
@@ -61,9 +59,7 @@ public class AuthDocs {
         List.of(
             fieldWithPath("data.memberInfoResponse.email").description("로그인된 이메일"),
             fieldWithPath("data.memberInfoResponse.nickname").description("로그인된 닉네임")
-        ),
-        tokenFields("data.tokenResponse.accessToken"),
-        List.of(fieldWithPath("data.tokenResponse.refreshToken.token").description("토큰 값"))
+        )
     );
   }
 

@@ -13,8 +13,8 @@ import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.domain.TokenPair;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.auth.token.dto.AccessTokenInfo;
 import com.clover.bookflow.domain.auth.token.dto.RefreshTokenInfo;
@@ -88,14 +88,14 @@ public class AuthServiceTest {
     );
 
     // when
-    SignupResponse response = authService.signup(signupRequest);
+    SignupResult result = authService.signup(signupRequest);
 
     // then
-    assertThat(response.memberInfoResponse().email()).isEqualTo(savedMember.getEmail());
-    assertThat(response.memberInfoResponse().nickname()).isEqualTo(savedMember.getNickname());
-    assertThat(response.tokenResponse().accessToken()).isEqualTo(
+    assertThat(result.memberInfoResponse().email()).isEqualTo(savedMember.getEmail());
+    assertThat(result.memberInfoResponse().nickname()).isEqualTo(savedMember.getNickname());
+    assertThat(result.tokenResponse().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.tokenResponse().refreshToken()).isEqualTo(
+    assertThat(result.tokenResponse().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(memberService).signup(signupRequest);
@@ -151,13 +151,13 @@ public class AuthServiceTest {
     );
 
     // when
-    LoginResponse response = authService.login(loginRequest);
+    LoginResult result = authService.login(loginRequest);
 
     // then
-    assertThat(response.memberInfoResponse().email()).isEqualTo(loginRequest.email());
-    assertThat(response.tokenResponse().accessToken()).isEqualTo(
+    assertThat(result.memberInfoResponse().email()).isEqualTo(loginRequest.email());
+    assertThat(result.tokenResponse().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.tokenResponse().refreshToken()).isEqualTo(
+    assertThat(result.tokenResponse().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));

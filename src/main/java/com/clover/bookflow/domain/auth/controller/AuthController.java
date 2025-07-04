@@ -3,7 +3,9 @@ package com.clover.bookflow.domain.auth.controller;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.dto.response.TokenResponse;
 import com.clover.bookflow.domain.auth.service.AuthService;
 import com.clover.bookflow.domain.auth.token.service.TokenService;
@@ -38,10 +40,10 @@ public class AuthController {
   @PostMapping("/signup")
   public ResponseEntity<ApiResponse<SignupResponse>> signup(
       @Valid @RequestBody SignupRequest signupRequest) {
-    SignupResponse signupResponse = authService.signup(signupRequest);
+    SignupResult signupResult = authService.signup(signupRequest);
 
-    String accessToken = signupResponse.tokenResponse().accessToken().token();
-    String refreshToken = signupResponse.tokenResponse().refreshToken().token();
+    String accessToken = signupResult.tokenResponse().accessToken().token();
+    String refreshToken = signupResult.tokenResponse().refreshToken().token();
 
     String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
@@ -51,16 +53,16 @@ public class AuthController {
     return ResponseEntity
         .status(HttpStatus.CREATED)
         .header(HttpHeaders.SET_COOKIE, accessTokenCookie, refreshTokenCookie)
-        .body(ApiResponse.created(signupResponse));
+        .body(ApiResponse.created(SignupResponse.from(signupResult.memberInfoResponse())));
   }
 
   @PostMapping("/login")
   public ResponseEntity<ApiResponse<LoginResponse>> login(
       @Valid @RequestBody LoginRequest loginRequest) {
-    LoginResponse loginResponse = authService.login(loginRequest);
+    LoginResult loginResult = authService.login(loginRequest);
 
-    String accessToken = loginResponse.tokenResponse().accessToken().token();
-    String refreshToken = loginResponse.tokenResponse().refreshToken().token();
+    String accessToken = loginResult.tokenResponse().accessToken().token();
+    String refreshToken = loginResult.tokenResponse().refreshToken().token();
 
     String accessTokenCookie = CookieUtil.createAccessTokenCookie(accessToken,
         (int) (accessTokenExpiry / 1000));
@@ -70,7 +72,7 @@ public class AuthController {
     return ResponseEntity
         .ok()
         .header(HttpHeaders.SET_COOKIE, accessTokenCookie, refreshTokenCookie)
-        .body(ApiResponse.success(loginResponse));
+        .body(ApiResponse.success(LoginResponse.from(loginResult.memberInfoResponse())));
   }
 
   @PostMapping("/refresh")

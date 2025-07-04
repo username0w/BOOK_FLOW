@@ -1,19 +1,13 @@
 package com.clover.bookflow.domain.auth.dto.response;
 
-import com.clover.bookflow.domain.auth.domain.TokenPair;
-import com.clover.bookflow.domain.member.entity.Member;
-
 public record LoginResponse(
-
-    MemberInfoResponse memberInfoResponse,
-    TokenResponse tokenResponse
-
+    MemberInfoResponse memberInfoResponse
 ) {
 
-  public static LoginResponse from(Member member, TokenPair tokenPair) {
+  public static LoginResponse from(MemberInfoResponse memberInfoResponse) {
     return new LoginResponse(
-        MemberInfoResponse.from(member),
-        TokenResponse.from(tokenPair));
+        memberInfoResponse
+    );
   }
 
 }
