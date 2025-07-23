@@ -16,9 +16,11 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class JwtProvider {
 
@@ -42,24 +44,26 @@ public class JwtProvider {
     this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
   }
 
-  public TokenWithMeta createAccessToken(String username, List<String> roles) {
-    return createToken(username, roles, accessTokenValidityInMs);
+  public TokenWithMeta createAccessToken(UUID uuid, List<String> roles) {
+    return createToken(uuid, roles, accessTokenValidityInMs);
   }
 
-  public TokenWithMeta createRefreshToken(String username, List<String> roles) {
-    return createToken(username, roles, refreshTokenValidityInMs);
+  public TokenWithMeta createRefreshToken(UUID uuid) {
+    return createToken(uuid, null, refreshTokenValidityInMs);
   }
 
-  private TokenWithMeta createToken(String email, List<String> roles, long validityInMs) {
+  private TokenWithMeta createToken(UUID uuid, List<String> roles, long validityInMs) {
     String jti = UUID.randomUUID().toString();
     Date now = new Date();
     Date validity = new Date(now.getTime() + validityInMs);
 
-    Claims claims = Jwts.claims().setSubject(email);
-    claims.put("roles", roles);
+    Claims claims = Jwts.claims().setSubject(uuid.toString());
+    if (roles != null) {
+      claims.put("roles", roles);
+    }
 
     String token = Jwts.builder()
-        .setSubject(email) // 토큰에 사용할 식별자 값 저장
+        .setSubject(uuid.toString()) // 토큰에 사용할 식별자 값 저장
         .setId(jti)
         .setIssuedAt(now) // 발행 시간
         .setExpiration(validity) // 만료 시간
@@ -72,9 +76,9 @@ public class JwtProvider {
   }
 
   // JWT 토큰에서 사용자 정보(email) 추출
-  public String getEmailFromToken(String token) {
+  public UUID getUuidFromToken(String token) {
     Claims claims = parseClaims(token);
-    return claims.getSubject(); // Subject는 이메일
+    return UUID.fromString(claims.getSubject()); // Subject는 사용자 UUID
   }
 
   public String getJtiFromToken(String token) {
@@ -105,8 +109,10 @@ public class JwtProvider {
           .parseClaimsJws(token) // 토큰 파싱 및 서명 검증
           .getBody(); // Claims 객체 반환
     } catch (ExpiredJwtException e) {
+      log.warn("Expired JWT token: {}", e.getMessage());
       throw new TokenExpiredException();
     } catch (JwtException e) {
+      log.error("Invalid JWT token: {}", e.getMessage());
       throw new InvalidTokenException(TokenErrorCode.INVALID_TOKEN);
     }
 

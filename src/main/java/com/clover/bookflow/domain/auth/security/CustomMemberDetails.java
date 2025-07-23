@@ -4,6 +4,7 @@ import com.clover.bookflow.domain.member.entity.Member;
 import com.clover.bookflow.domain.member.enums.MemberStatus;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,6 +14,8 @@ public class CustomMemberDetails implements UserDetails {
 
   @Getter
   private final Long id;
+  @Getter
+  private final UUID uuid;
   private final String email;
   private final String password;
   private final List<GrantedAuthority> authorities;
@@ -20,6 +23,7 @@ public class CustomMemberDetails implements UserDetails {
 
   public CustomMemberDetails(Member member) {
     this.id = member.getId();
+    this.uuid = member.getUuid();
     this.email = member.getEmail();
     this.password = member.getPassword();  // 암호화된 상태
     this.memberStatus = member.getMemberStatus();
@@ -34,7 +38,6 @@ public class CustomMemberDetails implements UserDetails {
   }
   // Member 에는 문자열 형태
   // CustomMemberDetails 에는 이미 변환된 형태로 저장
-
 
   @Override
   public String getPassword() {
