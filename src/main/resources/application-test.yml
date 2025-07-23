@@ -11,7 +11,7 @@ spring:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
     properties:
       hibernate:
         format_sql: true
@@ -19,6 +19,15 @@ spring:
     init:
       mode: never
 
+logging:
+  level:
+    root: WARN
+    com.clover: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.security: DEBUG
+
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 3600000
+  access-token-expiration-ms: 1000
+  refresh-token-expiration-ms: 5000
