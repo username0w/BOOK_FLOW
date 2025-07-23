@@ -3,9 +3,8 @@ package com.clover.bookflow.docs;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.restdocs.payload.FieldDescriptor;
 import org.springframework.restdocs.payload.JsonFieldType;
 
@@ -29,8 +28,15 @@ public class ApiDocs {
     );
   }
 
-  public static List<FieldDescriptor> combine(List<FieldDescriptor> base,
-      FieldDescriptor... extra) {
-    return Stream.concat(base.stream(), Arrays.stream(extra)).collect(Collectors.toList());
+//  public static List<FieldDescriptor> combine(List<FieldDescriptor> base,
+//      FieldDescriptor... extra) {
+//    return Stream.concat(base.stream(), Arrays.stream(extra)).collect(Collectors.toList());
+//  }
+
+  @SafeVarargs
+  public static List<FieldDescriptor> combine(List<FieldDescriptor>... groups) {
+    return Arrays.stream(groups)
+        .flatMap(Collection::stream)
+        .toList();
   }
 }

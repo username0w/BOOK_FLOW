@@ -17,8 +17,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public abstract class AbstractIntegrationTest {
 
   @Container
-  protected static final MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:8.0")
-      .withDatabaseName("bookflow")
+  protected static final MySQLContainer<?> mySQLContainer = new MySQLContainer<>("mysql:9.1")
+      .withDatabaseName("bookflow_testcontainer")
       .withUsername("testuser")
       .withPassword("testpassword");
 

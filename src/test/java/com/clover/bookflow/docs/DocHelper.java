@@ -19,8 +19,8 @@ public class DocHelper {
         .tag(tag)
         .summary(summary)
         .description(description)
-        .requestFields(requestFields)
-        .responseFields(responseFields)
+        .requestFields(requestFields != null ? requestFields : List.of())
+        .responseFields(responseFields != null ? responseFields : List.of())
         .build();
   }
 

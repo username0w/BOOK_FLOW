@@ -1,17 +1,15 @@
 package com.clover.bookflow.domain.auth.dto.response;
 
-import com.clover.bookflow.domain.member.entity.Member;
-
 public record SignupResponse(
 
-    String email,
-    String nickname,
-    String token
+    MemberInfoResponse memberInfoResponse,
+    AccessTokenResponse accessTokenResponse
 
 ) {
 
-  public static SignupResponse from(Member member, String token) {
-    return new SignupResponse(member.getEmail(), member.getNickname(), token);
+  public static SignupResponse from(MemberInfoResponse memberInfoResponse, String accessToken) {
+    return new SignupResponse(
+        memberInfoResponse, AccessTokenResponse.from(accessToken));
   }
 
 }

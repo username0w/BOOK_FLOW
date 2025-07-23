@@ -3,25 +3,32 @@ package com.clover.bookflow.domain.auth.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.clover.bookflow.domain.auth.AuthTestHelper;
+import com.clover.bookflow.domain.auth.domain.TokenPair;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
-import com.clover.bookflow.domain.auth.security.JwtProvider;
+import com.clover.bookflow.domain.auth.token.dto.AccessTokenInfo;
+import com.clover.bookflow.domain.auth.token.dto.RefreshTokenInfo;
+import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
+import com.clover.bookflow.domain.auth.token.repository.RefreshTokenRepository;
+import com.clover.bookflow.domain.auth.token.service.TokenService;
 import com.clover.bookflow.domain.member.entity.Member;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.entity.MemberTestHelper;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.domain.member.service.MemberService;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -40,51 +47,60 @@ public class AuthServiceTest {
   private MemberService memberService;
 
   @Mock
-  private AuthenticationManager authenticationManager;
+  private TokenService tokenService;
 
   @Mock
-  private JwtProvider jwtProvider;
+  private AuthenticationManager authenticationManager;
 
   @Mock
   private MemberRepository memberRepository;
 
+  @Mock
+  private RefreshTokenRepository refreshTokenRepository;
+
   private AuthService authService;
 
-  private MemberTestHelper memberTestHelper;
+  private AuthTestHelper authTestHelper;
 
   @BeforeEach
   void setUp() {
-    authService = new AuthService(memberService, authenticationManager, jwtProvider,
-        memberRepository);
-    memberTestHelper = new MemberTestHelper();
+    authService = new AuthService(memberService, tokenService, authenticationManager,
+        memberRepository, refreshTokenRepository);
+    authTestHelper = new AuthTestHelper();
   }
 
-  @DisplayName("회원가입 후 JWT 토큰 발급 성공 테스트")
+  @DisplayName("회원가입 성공 시 AccessToken 과 RefreshToken 이 발급된다")
   @Test
   void shouldReturnToken_whenSignupCredentialsAreValid() {
     // given
-    SignupRequest signupRequest = memberTestHelper.createSignupRequest();
+    SignupRequest signupRequest = authTestHelper.createSignupRequest();
 
     // Mock memberService의 회원가입 로직
-    Member savedMember = new Member(signupRequest.email(), signupRequest.password(),
-        signupRequest.nickname());
+    Member savedMember = MemberTestHelper.createTestUser();
     given(memberService.signup(any(SignupRequest.class))).willReturn(savedMember);
 
     // Mock JWT 발급
-    String expectedToken = "jwt-token";
-    given(jwtProvider.createToken(any(Authentication.class))).willReturn(expectedToken);
+    given(tokenService.issueTokens(any(UUID.class), anyList())).willReturn(
+        TokenPair.of(
+            AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA,
+            AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA
+        )
+    );
 
     // when
-    SignupResponse response = authService.signup(signupRequest);
+    SignupResult result = authService.signup(signupRequest);
 
     // then
-    // 응답 검증
-    assertThat(response.email()).isEqualTo(savedMember.getEmail());
-    assertThat(response.nickname()).isEqualTo(savedMember.getNickname());
-    assertThat(response.token()).isEqualTo(expectedToken);
+    assertThat(result.memberInfoResponse().email()).isEqualTo(savedMember.getEmail());
+    assertThat(result.memberInfoResponse().nickname()).isEqualTo(savedMember.getNickname());
+    assertThat(result.tokenResult().accessToken()).isEqualTo(
+        AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
+    assertThat(result.tokenResult().refreshToken()).isEqualTo(
+        RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(memberService).signup(signupRequest);
-    verify(jwtProvider).createToken(any(Authentication.class));
+    verify(refreshTokenRepository).save(any(RefreshToken.class));
+
   }
 
   @DisplayName("MemberService.signup() 예외가 발생하면 AuthService.signup()도 예외를 던진다")
@@ -92,7 +108,7 @@ public class AuthServiceTest {
   void shouldThrowException_whenUserServiceSignupThrows() {
     // given
     String existingEmail = "duplicate@example.com";
-    SignupRequest signupRequest = memberTestHelper.createInvalidSignupRequest(existingEmail, null,
+    SignupRequest signupRequest = authTestHelper.createInvalidSignupRequest(existingEmail, null,
         null);
     given(memberService.signup(any(SignupRequest.class))).willThrow(
         new DuplicateResourceException(MemberErrorCode.EMAIL_ALREADY_EXISTS));
@@ -103,51 +119,50 @@ public class AuthServiceTest {
     assertThat(exception.getMessage()).isEqualTo("이미 등록된 이메일입니다.");
   }
 
-  @DisplayName("로그인 성공 테스트")
+  @DisplayName("로그인 성공 시 AccessToken 과 RefreshToken 이 발급된다")
   @Test
-  void shouldReturnToken_whenLoginCredentialsAreValid() {
+  void shouldReturnTokensAndStoreRefreshToken_whenLoginCredentialsAreValid() {
     // given
-    LoginRequest loginRequest = memberTestHelper.createLoginRequest();
+    LoginRequest loginRequest = authTestHelper.createLoginRequest();
 
     // 인증된 유저객체
     // memberRepository 에서 받아오기
     // UserDetails
-    Member member = new Member("test@example.com", "password123", "개똥이");
+    // UUID 필요한 것을 위해 별도 존재
+    Member member = MemberTestHelper.createTestUser();
     CustomMemberDetails userDetails = new CustomMemberDetails(member);
 
     Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null,
         userDetails.getAuthorities());
+    // 테스트 코드에서는 인증된 상태를 나타내는 것이므로 credentials null
 
     // authenticationManager.authenticate 호출 시 위 Authentication 객체 리턴하도록 설정
     given(authenticationManager.authenticate(
-        argThat(token ->
-            token instanceof UsernamePasswordAuthenticationToken &&
-                ((UsernamePasswordAuthenticationToken) token).getPrincipal()
-                    .equals(loginRequest.email()) &&
-                ((UsernamePasswordAuthenticationToken) token).getCredentials()
-                    .equals(loginRequest.password())
-        )
-    )).willReturn(auth);
-//    Authentication auth = new UsernamePasswordAuthenticationToken(user,
-//        null); // 테스트 코드에서는 인증된 상태를 나타내는 것이므로 credentials null
-//    given(authenticationManager.authenticate(
-//        any(UsernamePasswordAuthenticationToken.class))).willReturn(auth);
+        any())).willReturn(auth);
 
     given(memberRepository.findById(userDetails.getId()))
         .willReturn(Optional.of(member));
 
-    String expectedToken = "jwt-token";
-    given(jwtProvider.createToken(auth)).willReturn(expectedToken);
+    // 토큰 발급
+    given(tokenService.issueTokens(any(UUID.class), anyList())).willReturn(
+        TokenPair.of(
+            AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA,
+            AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA
+        )
+    );
 
     // when
-    LoginResponse response = authService.login(loginRequest);
+    LoginResult result = authService.login(loginRequest);
 
     // then
-    assertThat(response.email()).isEqualTo(loginRequest.email());
-    assertThat(response.token()).isEqualTo(expectedToken);
+    assertThat(result.memberInfoResponse().email()).isEqualTo(loginRequest.email());
+    assertThat(result.tokenResult().accessToken()).isEqualTo(
+        AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
+    assertThat(result.tokenResult().refreshToken()).isEqualTo(
+        RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-    verify(jwtProvider).createToken(auth);
+    verify(refreshTokenRepository).save(any(RefreshToken.class));
 
   }
 
@@ -156,7 +171,7 @@ public class AuthServiceTest {
   void shouldThrowUnauthorizedException_whenPasswordIsInvalid() {
     // given
     String wrongPassword = "wrongPassword";
-    LoginRequest loginRequest = memberTestHelper.createInvalidLoginRequest(null, wrongPassword);
+    LoginRequest loginRequest = authTestHelper.createInvalidLoginRequest(null, wrongPassword);
 
     // authenticationManager.authenticate(...) 호출 시 비밀번호 오류로 인증 실패 시뮬레이션
     given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
@@ -180,7 +195,7 @@ public class AuthServiceTest {
   void shouldThrowUnauthorizedException_whenEmailIsInvalid() {
     // given
     String wrongEmail = "wrong@example.com";
-    LoginRequest loginRequest = memberTestHelper.createInvalidLoginRequest(wrongEmail, null);
+    LoginRequest loginRequest = authTestHelper.createInvalidLoginRequest(wrongEmail, null);
 
     given(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
         .willThrow(new BadCredentialsException("Bad credentials"));

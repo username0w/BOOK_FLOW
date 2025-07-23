@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor // 생성자 주입이 더 안전, 깔끔
 public class MemberService {
 
@@ -20,7 +21,6 @@ public class MemberService {
 
   private final PasswordEncoder passwordEncoder;
 
-  @Transactional
   public Member signup(SignupRequest request) {
     log.info("회원가입 시도: {}", request);
 

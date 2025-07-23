@@ -3,6 +3,7 @@ package com.clover.bookflow.domain.auth.service;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.member.entity.Member;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -17,8 +18,19 @@ public class CustomMemberDetailsService implements UserDetailsService {
 
   @Override
   public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    return loadUserByEmail(email);
+  }
+
+  public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
     Member member = memberRepository.findByEmail(email)
         .orElseThrow(() -> new UsernameNotFoundException("해당 이메일 사용자 찾을 수 없음."));
+
+    return new CustomMemberDetails(member);
+  }
+
+  public UserDetails loadUserByUuid(UUID uuid) throws UsernameNotFoundException {
+    Member member = memberRepository.findByUuid(uuid)
+        .orElseThrow(() -> new UsernameNotFoundException("해당  UUID 사용자 찾을 수 없음."));
 
     return new CustomMemberDetails(member);
   }

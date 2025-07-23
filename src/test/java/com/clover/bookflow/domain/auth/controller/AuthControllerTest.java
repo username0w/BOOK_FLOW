@@ -2,9 +2,19 @@ package com.clover.bookflow.domain.auth.controller;
 
 import static com.epages.restdocs.apispec.MockMvcRestDocumentationWrapper.document;
 import static com.epages.restdocs.apispec.ResourceDocumentation.resource;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.restdocs.cookies.CookieDocumentation.cookieWithName;
+import static org.springframework.restdocs.cookies.CookieDocumentation.requestCookies;
+import static org.springframework.restdocs.cookies.CookieDocumentation.responseCookies;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -13,16 +23,22 @@ import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.SecurityConfig;
 import com.clover.bookflow.docs.DocHelper;
 import com.clover.bookflow.docs.auth.AuthDocs;
+import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
+import com.clover.bookflow.domain.auth.dto.response.TokenResult;
 import com.clover.bookflow.domain.auth.security.JwtAuthenticationFilter;
 import com.clover.bookflow.domain.auth.service.AuthService;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.auth.token.service.TokenService;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
+import com.clover.bookflow.global.errorcode.TokenErrorCode;
+import com.clover.bookflow.global.exception.BusinessException;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
+import com.clover.bookflow.global.exception.auth.InvalidTokenException;
+import com.clover.bookflow.global.exception.auth.TokenExpiredException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,9 +47,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.HttpHeaders;
 import org.springframework.restdocs.RestDocumentationContextProvider;
 import org.springframework.restdocs.RestDocumentationExtension;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -60,13 +78,16 @@ public class AuthControllerTest {
   private AuthService authService;
 
   @MockitoBean
+  private TokenService tokenService;
+
+  @MockitoBean
   private JwtAuthenticationFilter jwtAuthenticationFilter;
 
   @Autowired
   private WebApplicationContext context;
 
   private TestHelper testHelper;
-  private MemberTestHelper memberTestHelper;
+  private AuthTestHelper authTestHelper;
 
   @BeforeEach
   void setUp(RestDocumentationContextProvider provider) {
@@ -75,7 +96,7 @@ public class AuthControllerTest {
         .build();
 
     testHelper = new TestHelper(mockMvc, objectMapper);
-    memberTestHelper = new MemberTestHelper();
+    authTestHelper = new AuthTestHelper();
   }
 
   @Nested
@@ -90,15 +111,21 @@ public class AuthControllerTest {
       @Test
       void shouldReturn201_whenSignupSuccess() throws Exception {
         // given
-        SignupRequest request = memberTestHelper.createSignupRequest();
-        SignupResponse response = memberTestHelper.createSignupResponse();
+        SignupRequest request = authTestHelper.createSignupRequest();
+        SignupResult result = authTestHelper.createSignupResult();
 
-        given(authService.signup(any(SignupRequest.class))).willReturn(response);
+        given(authService.signup(any(SignupRequest.class))).willReturn(result);
         // 여기 any 사용해도 request 는 mockMvc.perform 에 필요
 
         // when & then
         testHelper.postRequest(BASE_URL + "/signup", request)
             .andExpect(status().isCreated()) // HTTP 201 기대
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("refreshToken")))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+            .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"))
+            .andExpect(jsonPath("$.data.accessTokenResponse.accessToken").value("testAccessToken"))
             .andDo(document("auth/signup/success-201", // 문서 파일명
                 resource(DocHelper.build(
                     AuthDocs.TAG,
@@ -108,6 +135,8 @@ public class AuthControllerTest {
                     AuthDocs.signupSuccess()
                 ))
             ));
+
+        verify(authService).signup(request);
       }
       // DispatcherServlet 통해 요청 흐름
     }
@@ -146,6 +175,8 @@ public class AuthControllerTest {
                     AuthDocs.signupError()
                 ))
             ));
+
+        verify(authService, never()).signup(any());
       }
 
       @ParameterizedTest
@@ -180,6 +211,8 @@ public class AuthControllerTest {
                     AuthDocs.signupError()
                 ))
             ));
+
+        verify(authService, never()).signup(any());
       }
 
       @ParameterizedTest
@@ -214,6 +247,8 @@ public class AuthControllerTest {
                     AuthDocs.signupError()
                 ))
             ));
+
+        verify(authService, never()).signup(any());
       }
 
       @DisplayName("이메일 중복 시 409 Conflict 응답을 반환한다")
@@ -221,7 +256,7 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenEmailIsDuplicate() throws Exception {
         // given
         String duplicatedEmail = "duplicate@example.com";
-        SignupRequest request = memberTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
+        SignupRequest request = authTestHelper.createInvalidSignupRequest(duplicatedEmail, null,
             null);
 
         given(authService.signup(request)).willThrow(
@@ -242,6 +277,8 @@ public class AuthControllerTest {
                     AuthDocs.signupError()
                 ))
             ));
+
+        verify(authService).signup(request);
       }
 
       @DisplayName("닉네임 중복 시 409 Conflict 응답을 반환한다")
@@ -249,7 +286,7 @@ public class AuthControllerTest {
       void shouldReturnConflict_whenNicknameIsDuplicate() throws Exception {
         // given
         String duplicateNickname = "중복닉네임";
-        SignupRequest request = memberTestHelper.createInvalidSignupRequest(null, null,
+        SignupRequest request = authTestHelper.createInvalidSignupRequest(null, null,
             duplicateNickname);
 
         given(authService.signup(request)).willThrow(
@@ -270,8 +307,9 @@ public class AuthControllerTest {
                     AuthDocs.signupError()
                 ))
             ));
-      }
 
+        verify(authService).signup(request);
+      }
     }
 
   }
@@ -288,13 +326,19 @@ public class AuthControllerTest {
       @Test
       void shouldReturn200_whenLoginSuccess() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
-        LoginResponse response = memberTestHelper.createLoginResponse();
-        given(authService.login(any(LoginRequest.class))).willReturn(response);
+        LoginRequest request = authTestHelper.createLoginRequest();
+        LoginResult result = authTestHelper.createLoginResult();
+        given(authService.login(any(LoginRequest.class))).willReturn(result);
 
         // when & then
         testHelper.postRequest(BASE_URL + "/login", request)
             .andExpect(status().isOk())
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE, containsString("refreshToken")))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.memberInfoResponse.email").value("test@example.com"))
+            .andExpect(jsonPath("$.data.memberInfoResponse.nickname").value("testNickname"))
+            .andExpect(jsonPath("$.data.accessTokenResponse.accessToken").value("testAccessToken"))
             .andDo(document("auth/login/success-200", // 문서 파일명
                 resource(DocHelper.build(
                     AuthDocs.TAG,
@@ -305,6 +349,7 @@ public class AuthControllerTest {
                 ))
             ));
 
+        verify(authService).login(request);
       }
     }
 
@@ -316,7 +361,7 @@ public class AuthControllerTest {
       @Test
       void shouldReturnUnauthorized_whenWrongPassword() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
+        LoginRequest request = authTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
             new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 
@@ -336,13 +381,14 @@ public class AuthControllerTest {
                 ))
             ));
 
+        verify(authService).login(request);
       }
 
       @DisplayName("등록되지 않은 이메일 입력 시 401 Unauthorized 응답을 반환한다")
       @Test
       void shouldReturnUnauthorized_whenInvalidEmail() throws Exception {
         // given
-        LoginRequest request = memberTestHelper.createLoginRequest();
+        LoginRequest request = authTestHelper.createLoginRequest();
         given(authService.login(request)).willThrow(
             new UnauthorizedException(MemberErrorCode.LOGIN_FAILED));
 
@@ -362,11 +408,291 @@ public class AuthControllerTest {
                 ))
             ));
 
+        verify(authService).login(request);
       }
-
-
     }
 
   }
+
+  @Nested
+  @DisplayName("토큰 재발급")
+  class Refresh {
+
+    @Nested
+    @DisplayName("성공")
+    class Success {
+
+      @DisplayName("유효한 Refresh Token으로 토큰을 재발급하면, 새로운 Access Token과 Refresh Token이 발급된다")
+      @Test
+      void shouldReturnNewTokenPair_whenValidRefreshToken() throws Exception {
+        // given
+        String oldRefreshToken = "old-refresh-token";
+
+        TokenResult tokenResult = authTestHelper.createTokenResult();
+
+        String newAccessToken = tokenResult.accessToken().token();
+        String newRefreshToken = tokenResult.refreshToken().token();
+
+        given(tokenService.refreshToken(oldRefreshToken)).willReturn(tokenResult);
+
+        // when & then
+        testHelper.postRequestWithToken(BASE_URL + "/refresh", oldRefreshToken)
+            .andExpect(status().isOk())
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE,
+                containsString("refreshToken=" + newRefreshToken)))
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.accessToken").value(newAccessToken))
+            .andDo(document("auth/refresh/success-200", // 문서 파일명
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.REFRESH_SUMMARY,
+                    AuthDocs.REFRESH_DESCRIPTION,
+                    null,
+                    AuthDocs.refreshSuccess()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("재발급에 사용되는 Refresh Token")
+                ),
+                responseCookies(
+                    cookieWithName("refreshToken").description("새로 발급된 Refresh Token")
+                )
+            ));
+
+        verify(tokenService).refreshToken(oldRefreshToken);
+      }
+    }
+
+    @Nested
+    @DisplayName("실패")
+    class Fail {
+
+      @DisplayName("Refresh Token 이 빈 값이면 400 Bad Request 응답을 반환한다.")
+      @ParameterizedTest
+      @ValueSource(strings = {"", "   "})
+      void shouldReturnBadRequest_whenRefreshTokenIsBlank(String refreshToken)
+          throws Exception {
+        String documentName = testHelper.generateDocName("token", refreshToken);
+
+        testHelper.postRequestWithToken(BASE_URL + "/refresh", refreshToken)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(TokenErrorCode.TOKEN_NOT_PRESENT.getCode()))
+            .andExpect(jsonPath("$.message").value(TokenErrorCode.TOKEN_NOT_PRESENT.getMessage()))
+            .andDo(document("auth/refresh/fail-400/token-not-present-" + documentName,
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.REFRESH_SUMMARY,
+                    AuthDocs.REFRESH_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("재발급에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService, never()).refreshToken(any());
+      }
+
+      @DisplayName("DB 에 없는 토큰으로 재발급 요청하면 401 Unauthorized 응답을 반환한다")
+      @Test
+      void shouldReturnUnauthorized_whenRefreshTokenIsInvalid() throws Exception {
+        // given
+        String invalidToken = "invalid-token";
+
+        given(tokenService.refreshToken(invalidToken))
+            .willThrow(new InvalidTokenException(TokenErrorCode.TOKEN_NOT_FOUND));
+
+        // when & then
+        testHelper.postRequestWithToken(BASE_URL + "/refresh", invalidToken)
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(TokenErrorCode.TOKEN_NOT_FOUND.getCode()))
+            .andExpect(jsonPath("$.message").value(TokenErrorCode.TOKEN_NOT_FOUND.getMessage()))
+            .andDo(document("auth/refresh/fail-404/token-not-found",
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.REFRESH_SUMMARY,
+                    AuthDocs.REFRESH_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("재발급에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService).refreshToken(invalidToken);
+      }
+
+      @DisplayName("만료된 토큰으로 재발급 요청 시 401 Unauthorized 반환")
+      @Test
+      void shouldReturnUnauthorized_whenTokenExpired() throws Exception {
+        // given
+        String expiredToken = "expired-token";
+        given(tokenService.refreshToken(expiredToken)).willThrow(new TokenExpiredException());
+
+        // when & then
+        testHelper.postRequestWithToken(BASE_URL + "/refresh", expiredToken)
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("TOKEN_001"))
+            .andExpect(jsonPath("$.message").value("토큰이 만료되었습니다."))
+            .andDo(document("auth/refresh/fail-401/token-expired",
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.REFRESH_SUMMARY,
+                    AuthDocs.REFRESH_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("재발급에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService).refreshToken(expiredToken);
+      }
+
+      @DisplayName("DB에 없는 멤버로 인한 토큰 재발급 요청 시 404 Not Found 반환")
+      @Test
+      void shouldReturnNotFound_whenMemberNotFound() throws Exception {
+        String tokenWithMissingMember = "token-without-member";
+
+        given(tokenService.refreshToken(tokenWithMissingMember)).willThrow(
+            new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
+
+        testHelper.postRequestWithToken(BASE_URL + "/refresh", tokenWithMissingMember)
+            .andExpect(status().isNotFound())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value("MEMBER_001"))
+            .andExpect(jsonPath("$.message").value("사용자를 찾을 수 없습니다."))
+            .andDo(document("auth/refresh/fail-401/token-without-member",
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.REFRESH_SUMMARY,
+                    AuthDocs.REFRESH_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("재발급에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService).refreshToken(tokenWithMissingMember);
+      }
+    }
+  }
+
+  @Nested
+  @DisplayName("로그아웃")
+  class Logout {
+
+    @Nested
+    @DisplayName("성공")
+    class Success {
+
+      @DisplayName("유효한 토큰으로 로그아웃하면 jti 로 토큰을 삭제한다")
+      @Test
+      void shouldDeleteToken_whenValidToken() throws Exception {
+        // given
+        String validRefreshToken = "refresh-token";
+
+        // when & then
+        testHelper.postRequestWithToken(BASE_URL + "/logout", validRefreshToken)
+            .andExpect(status().isOk())
+            .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+            .andExpect(header().string(HttpHeaders.SET_COOKIE,
+                allOf(
+                    containsString("refreshToken=;"),
+                    containsString("Max-Age=0")
+                )
+            ))
+            .andExpect(jsonPath("$.success").value(true))
+            .andDo(document("auth/logout/success-200",
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.LOGOUT_SUMMARY,
+                    AuthDocs.LOGOUT_DESCRIPTION,
+                    null,
+                    AuthDocs.logoutSuccess()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("로그아웃에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService).logout(validRefreshToken);
+      }
+
+    }
+
+    @Nested
+    @DisplayName("실패")
+    class Fail {
+
+      @DisplayName("Refresh Token 이 빈 값이면 400 Bad Request 응답을 반환한다.")
+      @ParameterizedTest
+      @ValueSource(strings = {"", "   "})
+      void shouldReturnBadRequest_whenRefreshTokenIsBlank(String refreshToken)
+          throws Exception {
+
+        testHelper.postRequestWithToken(BASE_URL + "/logout", refreshToken)
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(TokenErrorCode.TOKEN_NOT_PRESENT.getCode()))
+            .andExpect(jsonPath("$.message").value(TokenErrorCode.TOKEN_NOT_PRESENT.getMessage()))
+            .andDo(document("auth/logout/fail-400/blank-token",
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.LOGOUT_SUMMARY,
+                    AuthDocs.LOGOUT_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("로그아웃에 사용되는 Refresh Token")
+                )
+            ));
+
+        verify(tokenService, never()).logout(any());
+      }
+
+      @DisplayName("잘못된 형식의 토큰이면 401 Unauthorized 응답을 반환한다.")
+      @ParameterizedTest
+      @ValueSource(strings = {"abcde", "1234.abcd.5678"})
+      void shouldReturnUnauthorized_whenRefreshTokenIsInvalidFormat(String refreshToken)
+          throws Exception {
+        doThrow(new InvalidTokenException(TokenErrorCode.INVALID_TOKEN))
+            .when(tokenService).logout(refreshToken);
+
+        String documentName = testHelper.generateDocName("token", refreshToken);
+
+        testHelper.postRequestWithToken(BASE_URL + "/logout", refreshToken)
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.success").value(false))
+            .andExpect(jsonPath("$.code").value(TokenErrorCode.INVALID_TOKEN.getCode()))
+            .andExpect(jsonPath("$.message").value(TokenErrorCode.INVALID_TOKEN.getMessage()))
+            .andDo(document("auth/logout/fail-401/invalid-format-token-" + documentName,
+                resource(DocHelper.build(
+                    AuthDocs.TAG,
+                    AuthDocs.LOGOUT_SUMMARY,
+                    AuthDocs.LOGOUT_DESCRIPTION,
+                    null,
+                    AuthDocs.error()
+                )),
+                requestCookies(
+                    cookieWithName("refreshToken").description("로그아웃에 사용되는 Refresh Token")
+                )
+            )).andDo(print());
+        ;
+
+        verify(tokenService).logout(refreshToken);
+      }
+    }
+  }
+
 
 }
