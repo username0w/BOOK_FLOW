@@ -3,7 +3,7 @@
 # docker 내에서 application, mysql 실행
 services:
   mysql:
-    image: mysql:8.0
+    image: mysql:9.1
     container_name: mysql-dev
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
