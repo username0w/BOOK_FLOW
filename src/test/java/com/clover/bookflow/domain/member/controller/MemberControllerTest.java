@@ -4,7 +4,7 @@ import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.docu
 
 import com.clover.bookflow.common.TestHelper;
 import com.clover.bookflow.config.SecurityConfig;
-import com.clover.bookflow.domain.member.helper.MemberTestHelper;
+import com.clover.bookflow.domain.member.entity.MemberTestHelper;
 import com.clover.bookflow.domain.member.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;

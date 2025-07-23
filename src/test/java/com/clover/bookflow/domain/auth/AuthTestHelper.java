@@ -3,8 +3,13 @@ package com.clover.bookflow.domain.auth;
 import com.clover.bookflow.domain.auth.domain.TokenWithMeta;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
+import com.clover.bookflow.domain.auth.dto.response.AccessTokenResponse;
 import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.MemberInfoResponse;
 import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
+import com.clover.bookflow.domain.auth.dto.response.TokenResult;
 import com.clover.bookflow.domain.auth.token.dto.AccessTokenInfo;
 import com.clover.bookflow.domain.auth.token.dto.RefreshTokenInfo;
 import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
@@ -32,9 +37,9 @@ public class AuthTestHelper {
   private static final RefreshTokenInfo DEFAULT_REFRESH_TOKEN_INFO = new RefreshTokenInfo(
       DEFAULT_REFRESH_TOKEN);
 
-  public static Member testUserMember() {
-    return new Member(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NICKNAME);
-  }
+//  public static Member testUserMember() {
+//    return new Member(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NICKNAME);
+//  }
 
   public SignupRequest createSignupRequest() {
     return new SignupRequest(DEFAULT_EMAIL, DEFAULT_PASSWORD, DEFAULT_NICKNAME);
@@ -48,9 +53,18 @@ public class AuthTestHelper {
     );
   }
 
+  public SignupResult createSignupResult() {
+    return new SignupResult(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new TokenResult(DEFAULT_ACCESS_TOKEN_INFO,
+            DEFAULT_REFRESH_TOKEN_INFO));
+  }
+
   public SignupResponse createSignupResponse() {
-    return new SignupResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_ACCESS_TOKEN_INFO,
-        DEFAULT_REFRESH_TOKEN_INFO);
+    return new SignupResponse(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new AccessTokenResponse(DEFAULT_ACCESS_TOKEN)
+    );
   }
 
   public LoginRequest createLoginRequest() {
@@ -64,9 +78,17 @@ public class AuthTestHelper {
     );
   }
 
+  public LoginResult createLoginResult() {
+    return new LoginResult(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new TokenResult(DEFAULT_ACCESS_TOKEN_INFO,
+            DEFAULT_REFRESH_TOKEN_INFO));
+  }
+
   public LoginResponse createLoginResponse() {
-    return new LoginResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME, DEFAULT_ACCESS_TOKEN_INFO,
-        DEFAULT_REFRESH_TOKEN_INFO);
+    return new LoginResponse(
+        new MemberInfoResponse(DEFAULT_EMAIL, DEFAULT_NICKNAME),
+        new AccessTokenResponse(DEFAULT_ACCESS_TOKEN));
   }
 
   public static RefreshToken createRefreshToken(Member member) {
@@ -76,4 +98,10 @@ public class AuthTestHelper {
   public static RefreshToken createExpiredRefreshToken(Member member) {
     return new RefreshToken(member, "expired-token", Instant.now().minusSeconds(1), "expired-jti");
   }
+
+  public TokenResult createTokenResult() {
+    return new TokenResult(DEFAULT_ACCESS_TOKEN_INFO, DEFAULT_REFRESH_TOKEN_INFO);
+  }
+
+
 }

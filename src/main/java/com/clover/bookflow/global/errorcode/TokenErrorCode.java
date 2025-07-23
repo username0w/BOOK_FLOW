@@ -7,9 +7,9 @@ import org.springframework.http.HttpStatus;
 public enum TokenErrorCode implements ErrorCode {
 
   TOKEN_EXPIRED("TOKEN_001", "토큰이 만료되었습니다.", HttpStatus.UNAUTHORIZED),
-  TOKEN_NOT_FOUND("TOKEN_002", "토큰을 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
+  TOKEN_NOT_FOUND("TOKEN_002", "토큰을 찾을 수 없습니다.", HttpStatus.UNAUTHORIZED),
   INVALID_TOKEN("TOKEN_003", "유효하지 않은 토큰입니다.", HttpStatus.UNAUTHORIZED),
-  ILLEGAL_TOKEN_USE("TOKEN_004", "잘못된 토큰 사용입니다.", HttpStatus.FORBIDDEN);
+  TOKEN_NOT_PRESENT("TOKEN_005", "토큰이 없습니다.", HttpStatus.BAD_REQUEST);
 
   private final String code;
   private final String message;

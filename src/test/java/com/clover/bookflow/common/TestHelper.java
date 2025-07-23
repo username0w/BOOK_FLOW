@@ -4,6 +4,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.Cookie;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -39,6 +40,13 @@ public class TestHelper {
   // .content 는 byte[] 타입 받는 메서드
   // String 넘기면 내부에서 .getBytes() 처리한다.
   // = 문자열, JSON, XML, 폼 데이터 전부 가능
+
+  // 토큰 재발급, 로그아웃 전용
+  public ResultActions postRequestWithToken(String url, String token) throws Exception {
+    return mockMvc.perform(
+        post(url)
+            .cookie(new Cookie("refreshToken", token)));
+  }
 
   // 문서화 파일 이름
   public String generateDocName(String fieldName, String value) {
