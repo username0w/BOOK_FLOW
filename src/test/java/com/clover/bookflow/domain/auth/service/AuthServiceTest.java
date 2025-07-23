@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -13,8 +12,8 @@ import com.clover.bookflow.domain.auth.AuthTestHelper;
 import com.clover.bookflow.domain.auth.domain.TokenPair;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.auth.token.dto.AccessTokenInfo;
 import com.clover.bookflow.domain.auth.token.dto.RefreshTokenInfo;
@@ -22,12 +21,14 @@ import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
 import com.clover.bookflow.domain.auth.token.repository.RefreshTokenRepository;
 import com.clover.bookflow.domain.auth.token.service.TokenService;
 import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.domain.member.entity.MemberTestHelper;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.domain.member.service.MemberService;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import com.clover.bookflow.global.exception.UnauthorizedException;
 import java.util.Optional;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -75,12 +76,11 @@ public class AuthServiceTest {
     SignupRequest signupRequest = authTestHelper.createSignupRequest();
 
     // Mock memberService의 회원가입 로직
-    Member savedMember = new Member(signupRequest.email(), signupRequest.password(),
-        signupRequest.nickname());
+    Member savedMember = MemberTestHelper.createTestUser();
     given(memberService.signup(any(SignupRequest.class))).willReturn(savedMember);
 
     // Mock JWT 발급
-    given(tokenService.issueTokens(anyString(), anyList())).willReturn(
+    given(tokenService.issueTokens(any(UUID.class), anyList())).willReturn(
         TokenPair.of(
             AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA,
             AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA
@@ -88,14 +88,14 @@ public class AuthServiceTest {
     );
 
     // when
-    SignupResponse response = authService.signup(signupRequest);
+    SignupResult result = authService.signup(signupRequest);
 
     // then
-    assertThat(response.email()).isEqualTo(savedMember.getEmail());
-    assertThat(response.nickname()).isEqualTo(savedMember.getNickname());
-    assertThat(response.accessToken()).isEqualTo(
+    assertThat(result.memberInfoResponse().email()).isEqualTo(savedMember.getEmail());
+    assertThat(result.memberInfoResponse().nickname()).isEqualTo(savedMember.getNickname());
+    assertThat(result.tokenResult().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.refreshToken()).isEqualTo(
+    assertThat(result.tokenResult().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(memberService).signup(signupRequest);
@@ -128,7 +128,8 @@ public class AuthServiceTest {
     // 인증된 유저객체
     // memberRepository 에서 받아오기
     // UserDetails
-    Member member = new Member("test@example.com", "password123", "개똥이");
+    // UUID 필요한 것을 위해 별도 존재
+    Member member = MemberTestHelper.createTestUser();
     CustomMemberDetails userDetails = new CustomMemberDetails(member);
 
     Authentication auth = new UsernamePasswordAuthenticationToken(userDetails, null,
@@ -143,7 +144,7 @@ public class AuthServiceTest {
         .willReturn(Optional.of(member));
 
     // 토큰 발급
-    given(tokenService.issueTokens(anyString(), anyList())).willReturn(
+    given(tokenService.issueTokens(any(UUID.class), anyList())).willReturn(
         TokenPair.of(
             AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA,
             AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA
@@ -151,13 +152,13 @@ public class AuthServiceTest {
     );
 
     // when
-    LoginResponse response = authService.login(loginRequest);
+    LoginResult result = authService.login(loginRequest);
 
     // then
-    assertThat(response.email()).isEqualTo(loginRequest.email());
-    assertThat(response.accessToken()).isEqualTo(
+    assertThat(result.memberInfoResponse().email()).isEqualTo(loginRequest.email());
+    assertThat(result.tokenResult().accessToken()).isEqualTo(
         AccessTokenInfo.from(AuthTestHelper.DEFAULT_ACCESS_TOKENWITHMETA));
-    assertThat(response.refreshToken()).isEqualTo(
+    assertThat(result.tokenResult().refreshToken()).isEqualTo(
         RefreshTokenInfo.from(AuthTestHelper.DEFAULT_REFRESH_TOKENWITHMETA));
 
     verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));

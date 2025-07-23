@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
+  boolean existsByJti(String jti);
+
   Optional<RefreshToken> findByJti(String jti);
 
   void deleteByJti(String jti);

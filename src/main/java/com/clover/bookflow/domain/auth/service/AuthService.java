@@ -3,8 +3,8 @@ package com.clover.bookflow.domain.auth.service;
 import com.clover.bookflow.domain.auth.domain.TokenPair;
 import com.clover.bookflow.domain.auth.dto.request.LoginRequest;
 import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
-import com.clover.bookflow.domain.auth.dto.response.LoginResponse;
-import com.clover.bookflow.domain.auth.dto.response.SignupResponse;
+import com.clover.bookflow.domain.auth.dto.response.LoginResult;
+import com.clover.bookflow.domain.auth.dto.response.SignupResult;
 import com.clover.bookflow.domain.auth.security.CustomMemberDetails;
 import com.clover.bookflow.domain.auth.token.entity.RefreshToken;
 import com.clover.bookflow.domain.auth.token.repository.RefreshTokenRepository;
@@ -40,7 +40,7 @@ public class AuthService {
   private final RefreshTokenRepository refreshTokenRepository;
 
   // 회원가입 시 jwt 토큰 발급
-  public SignupResponse signup(SignupRequest signupRequest) {
+  public SignupResult signup(SignupRequest signupRequest) {
     // 1. 사용자 정보 저장 (memberService 내부에서 중복 체크 및 인코딩 수행)
     Member member = memberService.signup(signupRequest);
 
@@ -50,16 +50,16 @@ public class AuthService {
     // => JWT stateless 방식을 위해 기존 수등 등록 방식에서 클라이언트가 응답 토큰으로 요청하도록 변경
 
     // 3. JWT 토큰 생성
-    TokenPair tokenPair = tokenService.issueTokens(member.getEmail(), roles);
+    TokenPair tokenPair = tokenService.issueTokens(member.getUuid(), roles);
 
     // 4. RefreshToken 저장
     refreshTokenRepository.save(RefreshToken.create(member, tokenPair.refreshToken()));
 
-    return SignupResponse.from(member, tokenPair);
+    return SignupResult.from(member, tokenPair);
 
   }
 
-  public LoginResponse login(LoginRequest loginRequest) {
+  public LoginResult login(LoginRequest loginRequest) {
 
     // authenticationManager.authenticate(...) 호출
     // 이 메서드는 내부적으로 AuthenticationProvider(보통 DaoAuthenticationProvider) 사용
@@ -76,6 +76,8 @@ public class AuthService {
           new UsernamePasswordAuthenticationToken(loginRequest.email(), loginRequest.password())
       );
 
+      log.info("Authentication successful for user: {}", loginRequest.email());
+
       // 2. 인증된 사용자 정보 조회
       CustomMemberDetails userDetails = (CustomMemberDetails) auth.getPrincipal();
       Member member = memberRepository.findById(userDetails.getId())
@@ -87,13 +89,14 @@ public class AuthService {
           .toList();
 
       // 3. JWT 토큰 생성
-      TokenPair tokenPair = tokenService.issueTokens(userDetails.getUsername(), roles);
+      TokenPair tokenPair = tokenService.issueTokens(userDetails.getUuid(), roles);
 
       // refreshToken 저장
       refreshTokenRepository.save(RefreshToken.create(member, tokenPair.refreshToken()));
 
-      return LoginResponse.from(member, tokenPair);
+      return LoginResult.from(member, tokenPair);
     } catch (BadCredentialsException e) {
+      log.warn("Authentication failed for user: {}", loginRequest.email());
       throw new UnauthorizedException(MemberErrorCode.LOGIN_FAILED);
     }
     /*
