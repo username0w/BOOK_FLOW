@@ -2,6 +2,7 @@ package com.clover.bookflow.domain.auth.token.entity;
 
 import com.clover.bookflow.domain.auth.domain.TokenWithMeta;
 import com.clover.bookflow.domain.member.entity.Member;
+import com.clover.bookflow.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "refresh_tokens")
-public class RefreshToken {
+public class RefreshToken extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
