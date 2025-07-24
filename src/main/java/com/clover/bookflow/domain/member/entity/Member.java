@@ -2,6 +2,7 @@ package com.clover.bookflow.domain.member.entity;
 
 import com.clover.bookflow.domain.member.enums.MemberStatus;
 import com.clover.bookflow.domain.member.enums.Role;
+import com.clover.bookflow.global.common.BaseTimeEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "members")
-public class Member {
+public class Member extends BaseTimeEntity {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
