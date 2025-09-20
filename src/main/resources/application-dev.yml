@@ -37,6 +37,12 @@ jwt:
   access-token-expiration-ms: 3600000
   refresh-token-expiration-ms: 604800000
 
+aladin:
+  ttbkey: ${ALADIN_TTBKEY}
+
+nl:
+  key: ${NL_KEY}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html  # Swagger UI 경로
