@@ -81,4 +81,7 @@ public class Member extends BaseTimeEntity {
     this.memberStatus = MemberStatus.DELETED;
   }
 
+  public boolean isAdmin() {
+    return this.role == Role.ADMIN;
+  }
 }
