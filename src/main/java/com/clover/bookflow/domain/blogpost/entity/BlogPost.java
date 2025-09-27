@@ -2,6 +2,7 @@ package com.clover.bookflow.domain.blogpost.entity;
 
 import com.clover.bookflow.domain.blogpost.enums.BlogPostState;
 import com.clover.bookflow.domain.book.entity.Book;
+import com.clover.bookflow.domain.common.AuthorIdentifiable;
 import com.clover.bookflow.domain.member.entity.Member;
 import com.clover.bookflow.global.common.BaseTimeEntity;
 import com.clover.bookflow.global.errorcode.BlogPostErrorCode;
@@ -28,7 +29,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "blog_posts")
-public class BlogPost extends BaseTimeEntity {
+public class BlogPost extends BaseTimeEntity implements AuthorIdentifiable {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -112,6 +113,13 @@ public class BlogPost extends BaseTimeEntity {
   }
 
   public void addBook(Book book) {
+    boolean alreadyLinked = blogPostBooks.stream()
+        .anyMatch(bpb -> bpb.getBook().equals(book));
+
+    if (alreadyLinked) {
+      return;
+    }
+
     BlogPostBook blogPostBook = new BlogPostBook(this, book);
     this.blogPostBooks.add(blogPostBook);
   }
@@ -120,7 +128,6 @@ public class BlogPost extends BaseTimeEntity {
     if (books == null || books.isEmpty()) {
       return;
     }
-
     for (Book book : books) {
       addBook(book);
     }
@@ -168,4 +175,8 @@ public class BlogPost extends BaseTimeEntity {
     }
   }
 
+  @Override
+  public Long getAuthorId() {
+    return author != null ? author.getId() : null;
+  }
 }
