@@ -63,13 +63,14 @@ public class Member extends BaseTimeEntity {
   }
 
 
-  protected Member(UUID uuid, String email, String password, String nickname) {
+  protected Member(UUID uuid, String email, String password, String nickname, Role role,
+      MemberStatus memberStatus) {
     this.uuid = uuid;
     this.email = email;
     this.password = password;
     this.nickname = nickname;
-    this.role = Role.USER;
-    this.memberStatus = MemberStatus.ACTIVE;
+    this.role = role;
+    this.memberStatus = memberStatus;
   }
 
 
