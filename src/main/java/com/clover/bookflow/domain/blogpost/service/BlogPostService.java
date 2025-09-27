@@ -71,7 +71,9 @@ public class BlogPostService {
     BlogPost blogPost = findBlogPostByIdAndStateNotDeleted(postId);
 
     // 권한 체크
-    hasPermission(blogPost, memberId);
+    if (!hasPermission(blogPost, memberId)) {
+      throw new BusinessException(BlogPostErrorCode.UNAUTHORIZED_ACCESS);
+    }
 
     // 블로그 글 업데이트
     blogPost.update(dto.title(), dto.content());
@@ -94,7 +96,7 @@ public class BlogPostService {
   }
 
   // 활성화된 글과 비활성화된 글을 구분하는 메서드
-  private boolean canViewBlogPost(BlogPost blogPost, Long memberId) {
+  boolean canViewBlogPost(BlogPost blogPost, Long memberId) {
     if (blogPost.isActive()) {
       return true; // 활성화된 글은 누구나 볼 수 있음
     }
@@ -102,11 +104,8 @@ public class BlogPostService {
   }
 
   // 권한 확인 메서드
-  private boolean hasPermission(BlogPost blogPost, Long memberId) {
-    if (isAuthor(blogPost, memberId) || isMemberAdmin(memberId)) {
-      return true;
-    }
-    throw new BusinessException(BlogPostErrorCode.UNAUTHORIZED_ACCESS);
+  boolean hasPermission(BlogPost blogPost, Long memberId) {
+    return isAuthor(blogPost, memberId) || isMemberAdmin(memberId);
   }
 
   // 블로그 글 작성자 확인
