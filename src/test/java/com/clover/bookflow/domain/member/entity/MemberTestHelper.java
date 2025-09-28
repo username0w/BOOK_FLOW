@@ -1,5 +1,6 @@
 package com.clover.bookflow.domain.member.entity;
 
+import com.clover.bookflow.domain.member.enums.MemberStatus;
 import com.clover.bookflow.domain.member.enums.Role;
 import java.util.UUID;
 
@@ -21,18 +22,24 @@ public class MemberTestHelper {
   public static Member createTestUser() {
     UUID testUuid = UUID.randomUUID();
     return new Member(testUuid, DEFAULT_EMAIL, DEFAULT_PASSWORD,
+        DEFAULT_NICKNAME, Role.USER, MemberStatus.ACTIVE);
+  }
+
+  public static Member createTestUser(UUID uuid, String email, String password, String nickname,
+      Role role, MemberStatus status) {
+    return new Member(uuid, email, password, nickname, role, status);
         DEFAULT_NICKNAME, Role.USER);
   }
 
   public static Member createTestOtherUser() {
     UUID testUuid = UUID.randomUUID();
-    return new Member(testUuid, "other@example.com", "otherpassword&", "otherNickname", Role.USER);
+    return new Member(testUuid, "other@example.com", "otherpassword&", "otherNickname", Role.USER, MemberStatus.ACTIVE);
   }
 
 
   public static Member createTestAdmin() {
     UUID testUuid = UUID.randomUUID();
-    return new Member(testUuid, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NICKNAME, Role.ADMIN);
+    return new Member(testUuid, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NICKNAME, Role.ADMIN, MemberStatus.ACTIVE);
   }
 
 
