@@ -17,6 +17,7 @@ public class WithMockCustomUserSecurityContextFactory implements
 
   @Override
   public SecurityContext createSecurityContext(WithMockCustomUser annotation) {
+    Long id = annotation.id();
     UUID uuid = UUID.fromString(annotation.uuid());
     String email = annotation.email();
     String password = annotation.password();
@@ -24,7 +25,8 @@ public class WithMockCustomUserSecurityContextFactory implements
     Role role = Role.valueOf(annotation.role());
     MemberStatus status = MemberStatus.valueOf(annotation.status());
 
-    Member member = MemberTestHelper.createTestUser(
+    Member member = MemberTestHelper.createTestMemberWithId(
+        id,
         uuid,
         email,
         password,

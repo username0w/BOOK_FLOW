@@ -28,18 +28,31 @@ public class MemberTestHelper {
   public static Member createTestUser(UUID uuid, String email, String password, String nickname,
       Role role, MemberStatus status) {
     return new Member(uuid, email, password, nickname, role, status);
-        DEFAULT_NICKNAME, Role.USER);
+  }
+
+  public static Member createTestMemberWithId(
+      Long id,
+      UUID uuid,
+      String email,
+      String password,
+      String nickname,
+      Role role,
+      MemberStatus status
+  ) {
+    return new Member(id, uuid, email, password, nickname, role, status);
   }
 
   public static Member createTestOtherUser() {
     UUID testUuid = UUID.randomUUID();
-    return new Member(testUuid, "other@example.com", "otherpassword&", "otherNickname", Role.USER, MemberStatus.ACTIVE);
+    return new Member(testUuid, "other@example.com", "otherpassword&", "otherNickname", Role.USER,
+        MemberStatus.ACTIVE);
   }
 
 
   public static Member createTestAdmin() {
     UUID testUuid = UUID.randomUUID();
-    return new Member(testUuid, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NICKNAME, Role.ADMIN, MemberStatus.ACTIVE);
+    return new Member(testUuid, ADMIN_EMAIL, ADMIN_PASSWORD, ADMIN_NICKNAME, Role.ADMIN,
+        MemberStatus.ACTIVE);
   }
 
 
