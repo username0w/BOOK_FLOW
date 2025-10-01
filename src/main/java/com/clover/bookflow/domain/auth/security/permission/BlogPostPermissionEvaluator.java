@@ -1,6 +1,5 @@
-package com.clover.bookflow.domain.blogpost.security;
+package com.clover.bookflow.domain.auth.security.permission;
 
-import com.clover.bookflow.domain.auth.security.permission.DomainPermissionEvaluator;
 import com.clover.bookflow.domain.blogpost.entity.BlogPost;
 import com.clover.bookflow.domain.blogpost.repository.BlogPostRepository;
 import com.clover.bookflow.domain.member.entity.Member;
