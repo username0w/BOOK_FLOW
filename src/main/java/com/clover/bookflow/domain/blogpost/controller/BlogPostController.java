@@ -6,12 +6,16 @@ import com.clover.bookflow.domain.blogpost.dto.request.BlogPostUpdateRequest;
 import com.clover.bookflow.domain.blogpost.dto.response.BlogPostResponse;
 import com.clover.bookflow.domain.blogpost.dto.response.BlogPostSimpleResponse;
 import com.clover.bookflow.domain.blogpost.service.BlogPostService;
+import com.clover.bookflow.global.response.ApiResponse;
+import com.clover.bookflow.global.response.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -32,57 +36,87 @@ public class BlogPostController {
 
   @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
   @PostMapping
-  public BlogPostResponse createBlogPost(
+  public ResponseEntity<ApiResponse<BlogPostResponse>> createBlogPost(
       @Valid @RequestBody BlogPostCreateRequest request,
       @AuthenticationPrincipal CustomMemberDetails userDetails) {
-    return blogPostService.createBlogPost(request, userDetails.getId());
+    System.out.println("Request: " + request);
+    System.out.println(
+        "User ID: " + (userDetails != null ? userDetails.getId() : "userDetails is null"));
+    System.out.println(
+        "User Role: " + userDetails.getAuthorities()
+    );
+
+    BlogPostResponse blogPostResponse = blogPostService.createBlogPost(request,
+        userDetails.getId());
+
+    return ResponseEntity
+        .status(HttpStatus.CREATED)
+        .body(ApiResponse.created(blogPostResponse));
   }
 
-  @PreAuthorize("@blogPostPermissionEvaluator.hasPermission(authentication, #postId, 'READ')")
+  @PreAuthorize("hasPermission(#postId, 'Blog_Post', 'READ')")
   @GetMapping("/{postId}")
-  public BlogPostResponse getBlogPost(
+  public ResponseEntity<ApiResponse<BlogPostResponse>> getBlogPost(
       @PathVariable Long postId,
       @AuthenticationPrincipal CustomMemberDetails userDetails) {
-    return blogPostService.getBlogPost(postId, userDetails != null ? userDetails.getId() : null);
+
+    BlogPostResponse response = blogPostService.getBlogPost(postId, userDetails.getId());
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 
   @GetMapping("/public")
-  public Page<BlogPostSimpleResponse> getPublicPosts(
+  public ResponseEntity<ApiResponse<PageResponse<BlogPostSimpleResponse>>> getPublicPosts(
       @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable) {
-    return blogPostService.getPublicBlogPosts(pageable);
+
+    Page<BlogPostSimpleResponse> page = blogPostService.getPublicBlogPosts(pageable);
+    PageResponse<BlogPostSimpleResponse> pageResponse = PageResponse.from(page);
+    return ResponseEntity.ok(ApiResponse.success(pageResponse));
   }
 
-  @PreAuthorize("hasAnyRole('ADMIN', 'USER')") // 필요한 권한만 넣으세요
   @GetMapping("/author/{authorId}")
-  public Page<BlogPostSimpleResponse> getPostsByAuthor(
+  public ResponseEntity<ApiResponse<PageResponse<BlogPostSimpleResponse>>> getPostsByAuthor(
       @PathVariable Long authorId,
       @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable) {
-    return blogPostService.getPublicPostsByAuthor(authorId, pageable);
+
+    Page<BlogPostSimpleResponse> page = blogPostService.getPublicPostsByAuthor(authorId, pageable);
+    PageResponse<BlogPostSimpleResponse> pageResponse = PageResponse.from(page);
+    return ResponseEntity.ok(ApiResponse.success(pageResponse));
   }
 
   @PreAuthorize("isAuthenticated()")
   @GetMapping("/me")
-  public Page<BlogPostSimpleResponse> getMyPosts(
+  public ResponseEntity<ApiResponse<PageResponse<BlogPostSimpleResponse>>> getMyPosts(
       @AuthenticationPrincipal CustomMemberDetails userDetails,
       @PageableDefault(size = 10, sort = "createdDate", direction = Sort.Direction.DESC) Pageable pageable) {
-    return blogPostService.getMyBlogPosts(userDetails.getId(), pageable);
+
+    Page<BlogPostSimpleResponse> page = blogPostService.getMyBlogPosts(userDetails.getId(),
+        pageable);
+    PageResponse<BlogPostSimpleResponse> pageResponse = PageResponse.from(page);
+    return ResponseEntity.ok(ApiResponse.success(pageResponse));
   }
 
-  @PreAuthorize("@blogPostPermissionEvaluator.hasPermission(authentication, #postId, 'WRITE')")
+  @PreAuthorize("hasPermission(#postId, 'Blog_Post', 'WRITE')")
   @PutMapping("/{postId}")
-  public BlogPostResponse updateBlogPost(
+  public ResponseEntity<ApiResponse<BlogPostResponse>> updateBlogPost(
       @PathVariable Long postId,
       @Valid @RequestBody BlogPostUpdateRequest request,
       @AuthenticationPrincipal CustomMemberDetails userDetails) {
-    return blogPostService.updateBlogPost(postId, request, userDetails.getId());
+
+    BlogPostResponse response = blogPostService.updateBlogPost(postId, request,
+        userDetails.getId());
+    System.out.println("blogPostResponse = " + response);
+    return ResponseEntity.ok(ApiResponse.success(response));
   }
 
-  @PreAuthorize("@blogPostPermissionEvaluator.hasPermission(authentication, #postId, 'DELETE')")
+  @PreAuthorize("hasPermission(#postId, 'Blog_Post', 'DELETE')")
   @DeleteMapping("/{postId}")
-  public void deleteBlogPost(
+  public ResponseEntity<ApiResponse<Void>> deleteBlogPost(
       @PathVariable Long postId,
       @AuthenticationPrincipal CustomMemberDetails userDetails) {
+
     blogPostService.deleteBlogPost(postId, userDetails.getId());
+    return ResponseEntity.noContent().build();
   }
+
 
 }
