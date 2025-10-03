@@ -1,10 +1,12 @@
 package com.clover.bookflow.common;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.Cookie;
+import java.util.Map;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
@@ -20,9 +22,30 @@ public class TestHelper {
     this.objectMapper = objectMapper;
   }
 
+  public ResultActions getRequest(String url) throws Exception {
+    return performRequest(get(url));
+  }
+
+  public ResultActions getRequest(String url, Map<String, String> params) throws Exception {
+    MockHttpServletRequestBuilder builder = get(url);
+    if (params != null) {
+      params.forEach(builder::param);
+    }
+    return mockMvc.perform(builder);
+  }
+
+
   // post 요청
   public ResultActions postRequest(String url, Object request) throws Exception {
     return performRequest(post(url), request);
+  }
+
+  private ResultActions performRequest(MockHttpServletRequestBuilder builder) throws Exception {
+    return mockMvc.perform(
+        builder
+            .contentType(MediaType.APPLICATION_JSON)
+            .with(csrf())
+    );
   }
 
 

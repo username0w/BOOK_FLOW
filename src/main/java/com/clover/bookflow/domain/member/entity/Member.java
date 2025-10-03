@@ -73,6 +73,17 @@ public class Member extends BaseTimeEntity {
     this.memberStatus = memberStatus;
   }
 
+  Member(Long id, UUID uuid, String email, String password, String nickname, Role role,
+      MemberStatus memberStatus) {
+    this.id = id;
+    this.uuid = uuid;
+    this.email = email;
+    this.password = password;
+    this.nickname = nickname;
+    this.role = role;
+    this.memberStatus = memberStatus;
+  }
+
 
   public static Member create(String email, String password, String nickname) {
     return new Member(email, password, nickname);
@@ -82,4 +93,7 @@ public class Member extends BaseTimeEntity {
     this.memberStatus = MemberStatus.DELETED;
   }
 
+  public boolean isAdmin() {
+    return this.role == Role.ADMIN;
+  }
 }
