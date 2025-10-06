@@ -102,5 +102,11 @@ public class BookService {
     return bookRepository.findExistingIsbns(isbns);
   }
 
+
+  public Book findOrCreateBookByIsbn(String isbn) {
+    return null;
+    //Todo: Book, BookDetail 구조 리팩토링 진행 및 전체 패키지 구조 리팩토링 진행
+  }
+
   // 도서 조회
 }

@@ -4,6 +4,7 @@ import com.clover.bookflow.domain.auth.dto.request.SignupRequest;
 import com.clover.bookflow.domain.member.entity.Member;
 import com.clover.bookflow.domain.member.repository.MemberRepository;
 import com.clover.bookflow.global.errorcode.MemberErrorCode;
+import com.clover.bookflow.global.exception.BusinessException;
 import com.clover.bookflow.global.exception.DuplicateResourceException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,12 @@ public class MemberService {
     if (memberRepository.existsByNickname(nickname)) {
       throw new DuplicateResourceException(MemberErrorCode.NICKNAME_ALREADY_EXISTS);
     }
+  }
+
+  @Transactional(readOnly = true)
+  public Member findMemberById(Long memberId) {
+    return memberRepository.findById(memberId)
+        .orElseThrow(() -> new BusinessException(MemberErrorCode.MEMBER_NOT_FOUND));
   }
 
 
