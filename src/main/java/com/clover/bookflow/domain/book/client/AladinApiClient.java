@@ -2,6 +2,7 @@ package com.clover.bookflow.domain.book.client;
 
 import com.clover.bookflow.domain.book.dto.AladinResponseDto;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 
@@ -15,6 +16,24 @@ public class AladinApiClient { // 실제 API 호출
 
   public AladinApiClient(RestClient restClient) {
     this.restClient = restClient;
+  }
+
+  public AladinResponseDto searchBooks(String keyword, Pageable pageable) {
+    return restClient.get()
+        .uri(uriBuilder -> uriBuilder
+            .path("/ItemSearch.aspx")
+            .queryParam("ttbkey", ttbKey)
+            .queryParam("Query", keyword)
+            .queryParam("QueryType", "Keyword")
+            .queryParam("MaxResults", pageable.getPageSize())
+            .queryParam("start", pageable.getPageNumber() * pageable.getPageSize() + 1)
+            .queryParam("SearchTarget", "Book")
+            .queryParam("output", "js")  // json으로 받으려면 js
+            .queryParam("Version", "20131101")
+            .build())
+        .retrieve()
+        .body(AladinResponseDto.class);
+
   }
 
   public AladinResponseDto fetchBestSellers() {
