@@ -107,10 +107,17 @@ public class BookService {
     return bookRepository.findExistingIsbns(isbns);
   }
 
-
+  // 도서 검색
+  // 해당 도서 추가
+  // 선택한 도서가 있는지 확인 및 없으면 저장
+  @Transactional
   public Book findOrCreateBookByIsbn(String isbn) {
-    return null;
-    //Todo: Book, BookDetail 구조 리팩토링 진행 및 전체 패키지 구조 리팩토링 진행
+    return bookRepository.findByIsbn(isbn)
+        .orElseGet(() -> {
+          BookSaveRequestDto dto = aladinApiService.fetchBookByIsbn(isbn);
+          Book book = dto.toEntity();
+          return bookRepository.save(book);
+        });
   }
 
   // 도서 검색
