@@ -2,6 +2,7 @@ package com.clover.bookflow.domain.book.service;
 
 import com.clover.bookflow.domain.book.client.AladinApiClient;
 import com.clover.bookflow.domain.book.dto.AladinResponseDto;
+import com.clover.bookflow.domain.book.dto.AladinResponseDto.Item;
 import com.clover.bookflow.domain.book.dto.BookSaveRequestDto;
 import com.clover.bookflow.domain.book.dto.BookSearchResponse;
 import java.util.List;
@@ -24,6 +25,10 @@ public class AladinApiService { //  클라이언트 호출 + 로직 + 예외 처
   public Page<BookSearchResponse> searchBooks(String keyword, Pageable pageable) {
     AladinResponseDto response = aladinApiClient.searchBooks(keyword, pageable);
 
+    if (response == null || response.items() == null || response.items().isEmpty()) {
+      throw new RuntimeException("알라딘 응답이 비어있습니다.");
+    }
+
     List<BookSearchResponse> result = response.items().stream()
         .map(item -> new BookSearchResponse(
             item.isbn13(),
@@ -37,6 +42,30 @@ public class AladinApiService { //  클라이언트 호출 + 로직 + 예외 처
         .toList();
 
     return new PageImpl<>(result, pageable, response.totalResults());
+  }
+
+  // 선택한 도서 찾기
+  public BookSaveRequestDto fetchBookByIsbn(String isbn) {
+    AladinResponseDto response = aladinApiClient.fetchBookByIsbn(isbn);
+
+    if (response == null || response.items() == null || response.items().isEmpty()) {
+      throw new RuntimeException("알라딘 응답이 비어있습니다.");
+    }
+
+    Item item = response.items().get(0); // 단건 추출
+
+    return new BookSaveRequestDto(
+        item.isbn13(),
+        item.title(),
+        item.author(),
+        item.publisher(),
+        item.cover(),
+        item.pubDate(),
+        item.description(),
+        item.categoryName()
+    );
+
+
   }
 
   // 베스트셀러 리스트

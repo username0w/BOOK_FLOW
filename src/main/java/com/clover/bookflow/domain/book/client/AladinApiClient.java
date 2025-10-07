@@ -36,6 +36,21 @@ public class AladinApiClient { // 실제 API 호출
 
   }
 
+  public AladinResponseDto fetchBookByIsbn(String isbn13) {
+
+    return restClient.get()
+        .uri(uriBuilder -> uriBuilder
+            .path("/ItemLookUp.aspx")
+            .queryParam("ttbkey", ttbKey)
+            .queryParam("ItemId", isbn13)
+            .queryParam("Cover", "Mid") // 생략 가능 (기본값)
+            .queryParam("Output", "JS") // JSON 응답
+            .queryParam("Version", "20131101")
+            .build())
+        .retrieve()
+        .body(AladinResponseDto.class);
+  }
+
   public AladinResponseDto fetchBestSellers() {
     return restClient.get()
         .uri(uriBuilder -> uriBuilder
