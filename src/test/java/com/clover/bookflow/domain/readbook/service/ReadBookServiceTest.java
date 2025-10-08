@@ -50,11 +50,6 @@ class ReadBookServiceTest {
       Long memberId = 1L;
       CreateReadBookRequest request = new CreateReadBookRequest(
           "1234567890",    // isbn
-          "testtitle",     // title
-          "testauthor",
-          "testpublisher",
-          "2023-01-01",
-          "http://testcover.url",
           LocalDate.now()
       );
 
@@ -82,11 +77,6 @@ class ReadBookServiceTest {
       Long memberId = 1L;
       CreateReadBookRequest request = new CreateReadBookRequest(
           "1234567890",    // isbn
-          "existingTitle",
-          "existingAuthor",
-          "existingPublisher",
-          "2022-12-31",
-          "http://existingcover.url",
           LocalDate.now()
       );
 
