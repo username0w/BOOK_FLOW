@@ -22,28 +22,32 @@ import lombok.NoArgsConstructor;
 @Table(name = "read_books")
 public class ReadBook extends BaseTimeEntity { // 사용자가 읽은 도서 목록 관리, 중간 엔티티
 
-  @Id
-  @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "member_id")
-  private Member member;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "member_id")
+    private Member member;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "book_id")
-  private Book book;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "book_id")
+    private Book book;
 
-  private LocalDate readDate;
+    private LocalDate readDate;
 
-  private ReadBook(Member member, Book book, LocalDate readDate) {
-    this.member = member;
-    this.book = book;
-    this.readDate = readDate;
-  }
+    private ReadBook(Member member, Book book, LocalDate readDate) {
+        this.member = member;
+        this.book = book;
+        this.readDate = readDate;
+    }
 
-  public static ReadBook create(Member member, Book book, LocalDate readDate) {
-    return new ReadBook(member, book, readDate);
-  }
+    public static ReadBook create(Member member, Book book, LocalDate readDate) {
+        return new ReadBook(member, book, readDate);
+    }
+
+    public void updateReadDate(LocalDate newReadDate) {
+        this.readDate = newReadDate;
+    }
 
 }
